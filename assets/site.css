@@ -325,21 +325,10 @@ footer .social svg { width: 18px; height: 18px; fill: currentColor; flex: none; 
 .feature-art { position: relative; height: 190px; border-radius: 12px; overflow: hidden; background: var(--bg-2); border: 1px solid var(--line); display: grid; place-items: center; }
 .live-art { background: radial-gradient(60% 70% at 50% 40%, rgba(229, 72, 45, .22), transparent 70%), var(--bg-2); }
 .live-art img { height: 166px; width: auto; border-radius: 6px; }
-.bg-photo { position: absolute; inset: 0; background:
-  radial-gradient(55% 70% at 75% 15%, #FF9F5A, transparent 60%),
-  radial-gradient(60% 70% at 15% 95%, #6A3CFF, transparent 65%),
-  linear-gradient(160deg, #213A8F, #B2456E); }
-.bg-ui { position: absolute; inset: 16px; display: grid; grid-template-columns: 28% minmax(0, 1fr); gap: 8px; }
-.bg-side, .bg-main { background: rgba(10, 11, 16, .55); border: 1px solid rgba(255, 255, 255, .12); border-radius: 8px; padding: 10px; display: grid; gap: 6px; align-content: start; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
-.bg-side i { display: block; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .35); }
-.bg-side i:first-child { width: 70%; background: var(--blue-hi); }
-.bg-main { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.bg-main i { display: block; aspect-ratio: 1; border-radius: 5px; background: rgba(255, 255, 255, .16); }
 .d3-art { background: radial-gradient(50% 60% at 50% 50%, rgba(31, 91, 255, .25), transparent 70%), var(--bg-2); }
 .ring { position: absolute; border: 1.5px solid rgba(10, 147, 255, .45); border-radius: 50%; aspect-ratio: 1; animation: ripple 3.6s ease-out infinite; }
-.r1 { width: 90px; } .r2 { width: 90px; animation-delay: 1.2s; } .r3 { width: 90px; animation-delay: 2.4s; }
+.r2 { animation-delay: 1.2s; } .r3 { animation-delay: 2.4s; }
 @keyframes ripple { from { transform: scale(1); opacity: .9; } to { transform: scale(2.6); opacity: 0; } }
-.d3-badge { position: relative; width: 64px; height: 64px; display: grid; place-items: center; border-radius: 18px; background: linear-gradient(180deg, #2E6BFF, var(--blue)); color: #fff; font-family: var(--font-display); font-weight: 800; font-size: 22px; box-shadow: 0 10px 30px -8px rgba(31, 91, 255, .8); }
 @media (prefers-reduced-motion: reduce) { .ring { animation: none; } .r2 { transform: scale(1.6); opacity: .5; } .r3 { transform: scale(2.2); opacity: .25; } }
 .fresh .also { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 14px 32px; }
 .fresh .also .mini-list { display: flex; flex-wrap: wrap; gap: 8px 24px; }
@@ -354,3 +343,19 @@ footer .social svg { width: 18px; height: 18px; fill: currentColor; flex: none; 
 .credit cite { font-style: italic; color: var(--ink); }
 .credit a { color: var(--blue-hi); text-decoration: none; font-weight: 600; white-space: nowrap; }
 .credit a:hover { text-decoration: underline; }
+
+/* New in Yoke: real screenshots for background and 3D audio */
+.fresh .wide { grid-column: span 2; display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 24px; align-items: center; align-content: center; }
+.shot-frame { border-radius: 12px; overflow: hidden; border: 1px solid var(--line); box-shadow: 0 24px 50px -30px rgba(0, 0, 0, .9); }
+.shot-frame img { width: 100%; height: auto; }
+.wide-text { display: grid; gap: 12px; min-width: 0; }
+.d3-shot { position: relative; width: 250px; max-width: 80%; }
+.d3-shot img { width: 100%; height: auto; }
+.d3-anchor { position: absolute; left: 48%; top: 50%; width: 0; height: 0; }
+.d3-anchor .ring { width: 64px; left: -32px; top: -32px; }
+.fresh .also { grid-column: span 2; flex-direction: column; align-items: flex-start; justify-content: center; }
+.fresh .also .changelog { margin-left: 0; }
+@media (max-width: 900px) { .fresh .wide, .fresh .also { grid-column: auto; } .fresh .wide { grid-template-columns: minmax(0, 1fr); } }
+/* Match the player bar's own colour so the screenshot blends into the card */
+.d3-art { background: radial-gradient(45% 60% at 50% 50%, rgba(31, 91, 255, .22), transparent 70%), #111A2A; }
+.d3-shot { width: 190px; }
