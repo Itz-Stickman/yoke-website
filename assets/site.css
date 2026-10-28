@@ -350,3 +350,7 @@ footer .social svg { width: 18px; height: 18px; fill: currentColor; flex: none; 
   .viz-shot { min-height: 0; aspect-ratio: 1032 / 488; }
   .fresh .also .changelog { margin-left: 0; }
 }
+.card .credit { font-size: 13px; color: var(--muted); padding-top: 12px; border-top: 1px dashed var(--line); margin-top: auto; }
+.credit cite { font-style: italic; color: var(--ink); }
+.credit a { color: var(--blue-hi); text-decoration: none; font-weight: 600; white-space: nowrap; }
+.credit a:hover { text-decoration: underline; }
