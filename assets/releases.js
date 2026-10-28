@@ -3,28 +3,36 @@
 (function () {
   var REPO = 'Itz-Stickman/yoke-releases';
   var DOWNLOAD_BASE = 'https://github.com/' + REPO + '/releases/download/';
-  var CACHE_KEY = 'yoke-releases-v1';
+  var CACHE_KEY = 'yoke-releases-v2';
 
-  var FALLBACK = [
-    { version: '1.4.5', date: '2026-10-28', setup: 'Yoke-Setup-1.4.5.exe', portable: 'Yoke-1.4.5-portable.exe' },
-    { version: '1.4.0', date: '2026-10-28' },
-    { version: '1.3.1', date: '2026-10-28' },
-    { version: '1.3.0', date: '2026-10-28', setup: 'Yoke-Setup-1.3.0.exe', portable: 'Yoke-1.3.0-portable.exe' }
-  ];
+  var FALLBACK = ['1.4.6', '1.4.5', '1.4.0', '1.3.1', '1.3.0'].map(function (v) {
+    return { version: v, date: '2026-10-28', setup: 'Yoke-Setup-' + v + '.exe', portable: 'Yoke-' + v + '-portable.exe' };
+  });
 
-  // Notes written for the site. If a GitHub release has its own notes, those win.
+  // Notes written for the site, in the same Markdown as GitHub releases.
+  // If a GitHub release has its own notes, those win.
   var NOTES = {
+    '1.4.6': [
+      '## ✨ New',
+      '- **Light mode.** Settings → Appearance now has a **Theme** switch: **Dark**, **Light** or **Match Windows**. Match Windows follows your Windows setting and switches live, title bar included.',
+      '- **12 accent colours.** Six new ones: **Indigo, Crimson, Orange, Lime, Cyan** and a neutral **Silver**.',
+      '- **Output device picker.** A new speaker button on the playback bar lets you choose where Yoke plays: speakers, headphones, monitors or Bluetooth devices.',
+      '  - The icon shows a **Bluetooth** mark and lights up in your accent colour when you\'re on a Bluetooth device.',
+      '  - If your Bluetooth headphones disconnect, Yoke switches to your default speakers, then back again when they reconnect.',
+      '- **Taskbar controls.** Hover Yoke in the taskbar for **Previous / Play-Pause / Next** buttons under the preview. They work while Yoke is minimized.',
+      '- **About Yoke.** A new section at the bottom of Settings shows your version, with links to our **website**, **X** and **Instagram**.',
+      '## 🔧 Fixed',
+      '- **Hard-to-read buttons on light accents:** buttons now use dark text on Amber (and the new Lime and Silver) instead of white.'
+    ].join('\n'),
     '1.4.5': [
-      { heading: 'Added', items: [
-        'Visualizers: choose from up to 5, with more coming soon',
-        'Live concerts',
-        '3D audio'
-      ] },
-      { heading: 'Fixed', items: [
-        "The Artists tab now shows and updates to the current artist's profile",
-        'Other minor bug fixes'
-      ] }
-    ]
+      '## Added',
+      '- **Visualizers.** Choose from up to 5, with more coming soon.',
+      '- **Live concerts**',
+      '- **3D audio**',
+      '## Fixed',
+      "- The Artists tab now shows and updates to the current artist's profile.",
+      '- Other minor bug fixes.'
+    ].join('\n')
   };
 
   // A body like "Yoke 1.4.5" is just a title, not notes.
@@ -32,24 +40,27 @@
     return !body || /^\s*(yoke\s*)?v?\d+(\.\d+)*\s*$/i.test(body);
   }
 
-  // Turns simple Markdown release notes into sections of headings and bullet items.
+  // Turns simple Markdown release notes into sections of headings and items.
+  // Items keep their **bold** markers; indented bullets become sub-items of the one above.
   function parseBody(body) {
     var sections = [];
     var cur = null;
+    var last = null;
+    var section = function () { if (!cur) { cur = { heading: '', items: [] }; sections.push(cur); } return cur; };
     body.replace(/\r/g, '').split('\n').forEach(function (raw) {
       var line = raw.trim();
       if (!line || /^#*\s*(yoke\s*)?(ver(sion)?\.?\s*)?v?\d+(\.\d+)+\s*$/i.test(line)) return;
-      var h = line.match(/^#{1,6}\s+(.*)$/) || line.match(/^\*\*(.+?)\*\*:?$/) || line.match(/^([^-*+].*?)\s*[:\-]$/);
       var item = line.match(/^[-*+]\s+(.*)$/);
-      if (item) {
-        if (!cur) { cur = { heading: '', items: [] }; sections.push(cur); }
-        cur.items.push(item[1].replace(/\*\*/g, ''));
+      var h = !item && (line.match(/^#{1,6}\s+(.*)$/) || line.match(/^\*\*([^*]+)\*\*:?$/) || line.match(/^([^-*+].*?)\s*[:\-]$/));
+      if (item && /^\s{2,}/.test(raw) && last) {
+        last.sub.push(item[1]);
       } else if (h) {
         cur = { heading: h[1].replace(/\*\*/g, '').trim(), items: [] };
         sections.push(cur);
+        last = null;
       } else {
-        if (!cur) { cur = { heading: '', items: [] }; sections.push(cur); }
-        cur.items.push(line.replace(/\*\*/g, ''));
+        last = { text: item ? item[1] : line, sub: [] };
+        section().items.push(last);
       }
     });
     return sections.filter(function (s) { return s.items.length; });
@@ -57,7 +68,7 @@
 
   function finish(list) {
     return list.map(function (r) {
-      r.notes = r.notes || NOTES[r.version] || [];
+      r.notes = r.notes || (NOTES[r.version] ? parseBody(NOTES[r.version]) : []);
       r.setupUrl = r.setup ? DOWNLOAD_BASE + 'v' + r.version + '/' + r.setup : null;
       r.portableUrl = r.portable ? DOWNLOAD_BASE + 'v' + r.version + '/' + r.portable : null;
       r.pageUrl = 'https://github.com/' + REPO + '/releases/tag/v' + r.version;

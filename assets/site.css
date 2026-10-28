@@ -301,3 +301,9 @@ footer img { height: 28px; width: auto; }
 .r-links a { color: var(--blue-hi); text-decoration: none; }
 .r-links a:hover { text-decoration: underline; }
 @media (max-width: 520px) { .r-date { margin-left: 0; order: 9; width: 100%; } .chev { margin-left: auto; } }
+.r-text { min-width: 0; line-height: 1.55; }
+.r-text strong { color: var(--ink); font-weight: 700; }
+.r-sec li { color: #C9CDDB; }
+.r-sub { margin: 10px 0 2px; padding: 0; list-style: none; display: grid; gap: 7px; }
+.r-sub li { display: grid; grid-template-columns: 10px minmax(0, 1fr); gap: 10px; font-size: 15px; color: var(--muted); }
+.r-sub li::before { content: ""; width: 8px; height: 1.5px; background: var(--line); transform: translateY(-4px); align-self: center; border-radius: 0; }
