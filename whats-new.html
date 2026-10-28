@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>What's new · Yoke</title>
+<meta name="description" content="Release notes for every version of Yoke, the ad-free music player for the files you own.">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png">
+<link rel="apple-touch-icon" href="assets/favicon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700;800&family=Figtree:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+<meta property="og:title" content="What's new in Yoke">
+<meta property="og:description" content="Release notes for every version of Yoke.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="assets/yoke-monitor.png">
+<meta name="theme-color" content="#0A0B10">
+</head>
+<body>
+
+<header class="wrap nav">
+  <a class="logo" href="./" aria-label="Yoke home"><img src="assets/yoke-wordmark.png" alt="Yoke" width="84" height="38"></a>
+  <nav class="nav-links" aria-label="Main">
+    <a href="./#inside">Features</a>
+    <a href="./#discord">Discord</a>
+    <a href="whats-new.html" aria-current="page">What's new</a>
+    <a class="btn" href="./#download">Download</a>
+  </nav>
+</header>
+
+<main class="changes">
+  <div class="wrap">
+    <div class="page-head">
+      <span class="label">Release notes</span>
+      <h1>What's new in <span class="grad">Yoke</span></h1>
+      <p>Every update, newest first. Open a version to see what changed.</p>
+      <div class="dl-row">
+        <a class="btn" data-dl="setup" href="https://github.com/Itz-Stickman/yoke-releases/releases/download/v1.4.5/Yoke-Setup-1.4.5.exe" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5.5 10.5 4.4v7.1H3zm8.5-1.2L21 3v8.5h-9.5zM3 12.5h7.5v7.1L3 18.5zm8.5 0H21V21l-9.5-1.3z"/></svg>Download <span data-version>1.4.5</span></a>
+      </div>
+    </div>
+
+    <div class="releases" id="releases" aria-live="polite"></div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <img src="assets/yoke-wordmark.png" alt="Yoke" width="62" height="28">
+    <span>© 2026 Yoke · No ads. No account. Just your music.</span>
+  </div>
+</footer>
+
+<script src="assets/releases.js"></script>
+<script>
+(() => {
+  const box = document.getElementById('releases');
+  const CHEVRON = '<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.4 8.6 12 13.2l4.6-4.6L18 10l-6 6-6-6z"/></svg>';
+  const fmtDate = (iso) => {
+    if (!iso) return '';
+    const d = new Date(iso + 'T12:00:00Z');
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+  const slug = (v) => 'v' + v.replace(/\./g, '-');
+  const kindOf = (heading) => /fix/i.test(heading) ? 'fixed' : /add|new/i.test(heading) ? 'added' : /change|improve/i.test(heading) ? 'changed' : 'other';
+  const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+
+  function render(list) {
+    const openNow = new Set([...box.querySelectorAll('details[open]')].map((d) => d.id));
+    const wanted = location.hash.slice(1);
+    box.innerHTML = '';
+    list.forEach((r, i) => {
+      const d = el('details', 'release');
+      d.id = slug(r.version);
+      d.open = openNow.size ? openNow.has(d.id) : (wanted ? wanted === d.id : i === 0);
+
+      const s = el('summary');
+      s.appendChild(el('span', 'r-ver', r.version));
+      if (i === 0) s.appendChild(el('span', 'badge', 'Latest'));
+      if (r.prerelease) s.appendChild(el('span', 'badge pre', 'Pre-release'));
+      if (r.notes.length) s.appendChild(el('span', 'r-count', r.notes.reduce((n, sec) => n + sec.items.length, 0) + ' changes'));
+      const date = el('time', 'r-date', fmtDate(r.date));
+      date.dateTime = r.date;
+      s.appendChild(date);
+      s.insertAdjacentHTML('beforeend', CHEVRON);
+      d.appendChild(s);
+
+      const body = el('div', 'r-body');
+      if (r.notes.length) {
+        r.notes.forEach((sec) => {
+          const wrap = el('div', 'r-sec');
+          wrap.dataset.kind = kindOf(sec.heading);
+          if (sec.heading) wrap.appendChild(el('h3', null, sec.heading));
+          const ul = el('ul');
+          sec.items.forEach((t) => ul.appendChild(el('li', null, t)));
+          wrap.appendChild(ul);
+          body.appendChild(wrap);
+        });
+      } else {
+        body.appendChild(el('p', 'r-empty', 'No notes for this release.'));
+      }
+      const links = el('div', 'r-links');
+      if (r.setupUrl) { const a = el('a', null, 'Download installer'); a.href = r.setupUrl; a.target = '_blank'; a.rel = 'noopener'; links.appendChild(a); }
+      if (r.portableUrl) { const a = el('a', null, 'Portable version'); a.href = r.portableUrl; a.target = '_blank'; a.rel = 'noopener'; links.appendChild(a); }
+      const gh = el('a', null, 'View on GitHub'); gh.href = r.pageUrl; gh.target = '_blank'; gh.rel = 'noopener'; links.appendChild(gh);
+      body.appendChild(links);
+      d.appendChild(body);
+      box.appendChild(d);
+    });
+    if (wanted && document.getElementById(wanted)) document.getElementById(wanted).scrollIntoView();
+  }
+
+  render(YokeReleases.fallback);
+  YokeReleases.load().then((list) => { render(list); YokeReleases.applyDownloads(list); }).catch(() => {});
+})();
+</script>
+</body>
+</html>
