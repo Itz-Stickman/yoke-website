@@ -18,7 +18,8 @@ body { margin: 0; }
   --violet: #5A48FF;
   --ember: #9C1A0E;
   --amber: #8A5A10;
-  --pa: #1F5BFF;
+  --pa: #0A6CFF;
+  --pa-ink: #FFFFFF;
   --font-display: "Rubik", "Segoe UI", system-ui, sans-serif;
   --font-body: "Figtree", "Segoe UI", system-ui, sans-serif;
   --font-mono: "DM Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
@@ -192,7 +193,7 @@ section.block { padding-block: 100px; }
 .ctl { background: none; border: 0; color: var(--ink); width: 36px; height: 36px; display: grid; place-items: center; border-radius: 999px; cursor: pointer; opacity: .85; }
 .ctl:hover { opacity: 1; background: var(--panel-hi); }
 .ctl svg { width: 18px; height: 18px; fill: currentColor; }
-.ctl.play { width: 42px; height: 42px; background: var(--pa); color: #fff; opacity: 1; box-shadow: 0 6px 20px -6px var(--pa); }
+.ctl.play { width: 42px; height: 42px; background: var(--pa); color: var(--pa-ink); opacity: 1; box-shadow: 0 6px 20px -6px var(--pa); }
 .ctl.play:hover { background: var(--pa); filter: brightness(1.1); }
 .ctl[aria-pressed="true"] { color: var(--pa); opacity: 1; }
 .seek-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; font-family: var(--font-mono); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -205,7 +206,7 @@ input[type="range"] { width: 100%; accent-color: var(--pa); cursor: pointer; }
 
 .import {
   display: inline-flex; align-items: center; gap: 8px; cursor: pointer; position: relative;
-  font-weight: 700; font-size: 14px; color: #fff; background: var(--pa);
+  font-weight: 700; font-size: 14px; color: var(--pa-ink); background: var(--pa);
   padding: 8px 14px; border-radius: 999px;
 }
 .import:focus-within { outline: 3px solid var(--blue-hi); outline-offset: 3px; }
@@ -217,7 +218,7 @@ input[type="range"] { width: 100%; accent-color: var(--pa); cursor: pointer; }
 .settings h3 { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
 .field { display: grid; gap: 12px; }
 .field-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
-.swatches { display: flex; flex-wrap: wrap; gap: 10px; }
+.swatches { display: grid; grid-template-columns: repeat(6, 34px); gap: 12px; }
 .swatch { width: 34px; height: 34px; border-radius: 999px; border: 0; cursor: pointer; background: var(--c); }
 .swatch[aria-checked="true"] { box-shadow: 0 0 0 3px var(--panel), 0 0 0 5px var(--ink); }
 .settings .note { font-size: 13.5px; color: var(--muted); }
@@ -359,3 +360,4 @@ footer .social svg { width: 18px; height: 18px; fill: currentColor; flex: none; 
 /* Match the player bar's own colour so the screenshot blends into the card */
 .d3-art { background: radial-gradient(45% 60% at 50% 50%, rgba(31, 91, 255, .22), transparent 70%), #111A2A; }
 .d3-shot { width: 190px; }
+.accent-name { font-family: var(--font-mono); font-size: 13px; color: var(--pa); }

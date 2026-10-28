@@ -249,10 +249,10 @@
         <div class="settings">
           <h3>Settings</h3>
           <div class="field">
-            <div class="field-head"><span class="label">Accent color</span></div>
+            <div class="field-head"><span class="label">Accent color</span><span class="accent-name" id="accent-name" aria-live="polite">Blue</span></div>
             <div class="swatches" role="radiogroup" aria-label="Accent color" id="swatches"></div>
           </div>
-          <p class="note">Pick a color and the player updates right away.</p>
+          <p class="note">The same 12 colors as in Yoke. Pick one and the player updates right away.</p>
         </div>
       </div>
     </div>
@@ -452,9 +452,11 @@
   player.addEventListener('drop', (e) => { if (e.dataTransfer && e.dataTransfer.files.length) addFiles(e.dataTransfer.files); });
 
   // ---------- Settings ----------
+  // Yoke's 12 accent colors, in the app's order. Light ones get dark text, like the app.
   const ACCENTS = [
-    ['Yoke blue', '#1F5BFF'], ['Violet', '#6A4BFF'], ['Ember', '#E5482D'],
-    ['Amber', '#F0A21E'], ['Mint', '#22C08A'], ['Pink', '#E0458C']
+    ['Blue', '#0A6CFF'], ['Indigo', '#5B5BF0'], ['Violet', '#7C4DFF'], ['Pink', '#E0458E'],
+    ['Crimson', '#E11D48'], ['Ember', '#E8492C'], ['Orange', '#F97316'], ['Amber', '#F0A020', 'dark'],
+    ['Lime', '#84CC16', 'dark'], ['Mint', '#1FBF8A'], ['Cyan', '#06B6D4'], ['Silver', '#94A3B8', 'dark']
   ];
   const saved = (() => { try { return JSON.parse(localStorage.getItem('yoke-demo') || '{}'); } catch (e) { return {}; } })();
   const sw = $('swatches');
@@ -468,8 +470,11 @@
     sw.appendChild(b);
   });
   function setAccent(c) {
+    const [name, , ink] = ACCENTS.find((a) => a[1] === c);
     try { localStorage.setItem('yoke-demo', JSON.stringify({ accent: c })); } catch (e) {}
     document.documentElement.style.setProperty('--pa', c);
+    document.documentElement.style.setProperty('--pa-ink', ink === 'dark' ? '#0A0B10' : '#FFFFFF');
+    $('accent-name').textContent = name;
     sw.querySelectorAll('.swatch').forEach((b) => b.setAttribute('aria-checked', b.dataset.c === c ? 'true' : 'false'));
   }
 
