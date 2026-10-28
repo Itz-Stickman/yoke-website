@@ -352,7 +352,7 @@ footer .social svg { width: 18px; height: 18px; fill: currentColor; flex: none; 
 .wide-text { display: grid; gap: 12px; min-width: 0; }
 .d3-shot { position: relative; width: 250px; max-width: 80%; }
 .d3-shot img { width: 100%; height: auto; }
-.d3-anchor { position: absolute; left: 48%; top: 50%; width: 0; height: 0; }
+.d3-anchor { position: absolute; left: 50.4%; top: 50.6%; width: 0; height: 0; }
 .d3-anchor .ring { width: 64px; left: -32px; top: -32px; }
 .fresh .also { grid-column: span 2; flex-direction: column; align-items: flex-start; justify-content: center; }
 .fresh .also .changelog { margin-left: 0; }
@@ -361,3 +361,5 @@ footer .social svg { width: 18px; height: 18px; fill: currentColor; flex: none; 
 .d3-art { background: radial-gradient(45% 60% at 50% 50%, rgba(31, 91, 255, .22), transparent 70%), #111A2A; }
 .d3-shot { width: 190px; }
 .accent-name { font-family: var(--font-mono); font-size: 13px; color: var(--pa); }
+/* Fade the screenshot's edges into the card so no strip shows */
+.d3-shot img { -webkit-mask-image: radial-gradient(ellipse closest-side, #000 86%, transparent); mask-image: radial-gradient(ellipse closest-side, #000 86%, transparent); }
