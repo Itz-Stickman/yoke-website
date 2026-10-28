@@ -307,3 +307,9 @@ footer img { height: 28px; width: auto; }
 .r-sub { margin: 10px 0 2px; padding: 0; list-style: none; display: grid; gap: 7px; }
 .r-sub li { display: grid; grid-template-columns: 10px minmax(0, 1fr); gap: 10px; font-size: 15px; color: var(--muted); }
 .r-sub li::before { content: ""; width: 8px; height: 1.5px; background: var(--line); transform: translateY(-4px); align-self: center; border-radius: 0; }
+
+/* Social links */
+footer .social { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; }
+footer .social a { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); text-decoration: none; font-weight: 600; }
+footer .social a:hover { color: var(--ink); }
+footer .social svg { width: 18px; height: 18px; fill: currentColor; flex: none; }
