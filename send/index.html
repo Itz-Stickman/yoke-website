@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Send to Yoke</title>
+<meta name="description" content="Send songs from your phone to Yoke on your PC.">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="../assets/favicon-192.png">
+<link rel="apple-touch-icon" href="../assets/favicon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700;800&family=Figtree:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../assets/site.css">
+<meta name="theme-color" content="#0A0B10">
+<style>
+  .send { max-width: 480px; margin: 0 auto; padding: 8px max(16px, env(safe-area-inset-left, 0px)) 48px; }
+  .send h1 { font-size: 30px; margin: 8px 0 6px; }
+  .send .lead { color: var(--muted); margin-bottom: 22px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 22px 18px; }
+  .center { display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; }
+  .code-input {
+    width: 200px; text-align: center; font: 500 38px/1 var(--font-mono); letter-spacing: .3em;
+    background: var(--panel-hi); color: var(--ink); border: 1px solid var(--line); border-radius: 14px; padding: 14px 0 14px .3em;
+  }
+  .code-input:focus { outline: none; border-color: var(--blue-hi); }
+  .msg { font-size: 15px; color: var(--muted); }
+  .msg.bad { color: #ff6b6e; }
+  .spinner { width: 34px; height: 34px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--blue-hi); animation: spin .9s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .pick { cursor: pointer; border-style: dashed; border-width: 2px; }
+  .pick .plus {
+    width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; font-size: 30px; color: #fff;
+    background: linear-gradient(180deg, #2E6BFF, var(--blue));
+  }
+  .pick b { font-size: 18px; font-family: var(--font-display); }
+  .pick input { display: none; }
+  .summary { margin: 18px 2px 8px; color: var(--muted); font-size: 14px; }
+  .files { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+  .files li { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+  .row { display: flex; align-items: center; gap: 10px; }
+  .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; }
+  .state { font-size: 13px; color: var(--muted); flex: none; }
+  .files li.done .state { color: #3ccf7a; }
+  .files li.failed .state { color: #ff6b6e; }
+  .bar { height: 4px; border-radius: 2px; background: var(--panel-hi); margin-top: 8px; overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--blue), var(--blue-hi)); }
+  .files li.done .bar, .files li.failed .bar { display: none; }
+  .err { font-size: 13px; color: #ff6b6e; margin-top: 4px; }
+  .help { color: var(--muted); font-size: 14px; margin-top: 26px; }
+  .help summary { color: var(--ink); cursor: pointer; }
+  .help ul { padding-left: 18px; }
+  .help li { margin: 6px 0; }
+  .lost { background: #2a1418; border: 1px solid #7a2a32; border-radius: 12px; padding: 10px 12px; margin-bottom: 14px; font-size: 14px; }
+</style>
+</head>
+<body>
+
+<header class="wrap nav">
+  <a class="logo" href="../" aria-label="Yoke home"><img src="../assets/yoke-wordmark.png" alt="Yoke" width="84" height="38"></a>
+</header>
+
+<main class="send">
+  <h1>Send to <span class="grad">Yoke</span></h1>
+  <p class="lead">Send songs from this phone to Yoke on your PC. They go straight to your PC, encrypted.</p>
+
+  <!-- 1. enter the code from the PC -->
+  <form class="card center" id="step-code" hidden>
+    <b>Enter the code shown in Yoke on your PC</b>
+    <span class="msg">In Yoke: <b>＋ Add music → From your phone…</b></span>
+    <input class="code-input" id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="4" placeholder="0000" aria-label="4-digit code">
+    <div class="msg bad" id="code-err"></div>
+    <button class="btn" type="submit">Connect</button>
+  </form>
+
+  <!-- 2. connecting / waiting for the PC to allow -->
+  <div class="card center" id="step-wait" hidden>
+    <div class="spinner" aria-hidden="true"></div>
+    <div class="msg" id="wait-msg">Connecting to your PC…</div>
+    <button class="btn" type="button" id="wait-cancel" hidden>Use a different code</button>
+  </div>
+
+  <!-- 3. send -->
+  <div id="step-send" hidden>
+    <div class="lost" id="lost" hidden>Lost the connection to your PC. Keep Yoke's "From your phone" screen open, then <a href="./">connect again</a>.</div>
+    <label class="card center pick">
+      <div class="plus">+</div>
+      <b>Choose songs</b>
+      <span class="msg">Pick music files from your phone. You can choose several at once.</span>
+      <input type="file" id="files" multiple
+        accept="audio/*,.mp3,.flac,.m4a,.aac,.ogg,.opus,.wav,.webm,.wma,.aiff,.aif,.ape,.wv,.dsf,.dff,.tta,.mka,.ac3,.mpc">
+    </label>
+    <div class="summary" id="summary" hidden></div>
+    <ul class="files" id="list"></ul>
+  </div>
+
+  <details class="help">
+    <summary>Help</summary>
+    <ul>
+      <li>Keep Yoke's <b>From your phone</b> screen open on your PC while sending, and keep this page open on your phone.</li>
+      <li>Your phone just needs internet. It doesn't have to be on the same Wi-Fi as your PC.</li>
+      <li>On Android, tap the ☰ menu in the file picker to browse <b>Downloads</b>, <b>Music</b> or another app's folder.</li>
+      <li>On iPhone, songs need to be in the <b>Files</b> app (for example, saved from another app with <b>Share → Save to Files</b>).</li>
+      <li>Songs downloaded inside streaming apps (Spotify, Apple Music, YouTube Music…) are locked to that app and can't be sent.</li>
+      <li>Songs aren't uploaded to this website. They travel encrypted from your phone to your PC.</li>
+    </ul>
+  </details>
+</main>
+
+<script src="peerjs-1.5.5.min.js"></script>
+<script>
+  // Must match Yoke (public/app.js).
+  const PEER_PREFIX = 'yokebeat-send-';
+  const CHUNK = 16 * 1024; // safe message size on every browser
+  const HIGH_WATER = 4 * 1024 * 1024;
+  const AUDIO = /\.(mp3|flac|m4a|aac|ogg|opus|wav|webm|wma|aiff|aif|ape|wv|dsf|dff|tta|mka|ac3|mpc)$/i;
+
+  const $ = (id) => document.getElementById(id);
+  const steps = ['step-code', 'step-wait', 'step-send'];
+  const show = (id) => steps.forEach((s) => ($(s).hidden = s !== id));
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const mb = (n) => (n / 1048576).toFixed(n < 10485760 ? 1 : 0) + ' MB';
+
+  const device = /iPhone/.test(navigator.userAgent) ? 'An iPhone'
+    : /iPad/.test(navigator.userAgent) ? 'An iPad'
+    : /Android/.test(navigator.userAgent) ? 'An Android phone'
+    : 'A device';
+
+  let peer = null;
+  let conn = null;
+  const waiting = new Map(); // file id -> resolve(reply)
+
+  // ----- 1. code -----
+  function askForCode(error = '') {
+    peer?.destroy();
+    peer = conn = null;
+    history.replaceState(null, '', location.pathname);
+    show('step-code');
+    $('code-err').textContent = error;
+    $('code').value = '';
+    $('code').focus();
+  }
+  $('code').oninput = () => {
+    $('code').value = $('code').value.replace(/\D/g, '').slice(0, 4);
+    if ($('code').value.length === 4) $('step-code').requestSubmit();
+  };
+  $('step-code').onsubmit = (e) => {
+    e.preventDefault();
+    if ($('code').value.length === 4) connect($('code').value, null);
+  };
+  $('wait-cancel').onclick = () => askForCode();
+
+  // ----- 2. connect -----
+  function connect(code, key) {
+    show('step-wait');
+    $('wait-msg').textContent = 'Connecting to your PC…';
+    $('wait-cancel').hidden = true;
+    peer = new Peer({ debug: 0 });
+    const giveUp = setTimeout(() => {
+      if (!conn?.open) askForCode("Couldn't reach your PC. Check the code, and that Yoke's \"From your phone\" screen is open.");
+    }, 25000);
+    peer.on('error', (err) => {
+      clearTimeout(giveUp);
+      if (err.type === 'peer-unavailable') askForCode('No Yoke found with that code. Check the code on your PC. It changes each time you open the screen.');
+      else if (!conn?.open) askForCode("Couldn't connect. Check this phone's internet connection and try again.");
+    });
+    peer.on('open', () => {
+      conn = peer.connect(PEER_PREFIX + code, { reliable: true, serialization: 'raw', metadata: { key, device } });
+      conn.on('open', () => {
+        clearTimeout(giveUp);
+        if (!key) {
+          $('wait-msg').innerHTML = 'Connected. <b>Click Allow</b> in Yoke on your PC.';
+          $('wait-cancel').hidden = false;
+        }
+      });
+      conn.on('data', onMessage);
+      conn.on('close', () => {
+        if (!$('step-send').hidden) $('lost').hidden = false;
+        for (const resolve of waiting.values()) resolve({ type: 'failed', error: 'Lost the connection to your PC.' });
+        waiting.clear();
+      });
+    });
+  }
+
+  function onMessage(data) {
+    if (typeof data !== 'string') return;
+    let msg;
+    try { msg = JSON.parse(data); } catch { return; }
+    if (msg.type === 'accepted') {
+      show('step-send');
+      run();
+    } else if (msg.type === 'denied') {
+      askForCode('Your PC said no.');
+    } else if (msg.type === 'busy') {
+      askForCode('Another phone is waiting to be allowed on that PC. Try again in a moment.');
+    } else if ((msg.type === 'saved' || msg.type === 'failed') && waiting.has(msg.id)) {
+      waiting.get(msg.id)(msg);
+      waiting.delete(msg.id);
+    }
+  }
+
+  // ----- 3. send -----
+  const queue = [];
+  let busy = false;
+  let sent = 0;
+
+  $('files').onchange = () => {
+    for (const file of $('files').files) {
+      const li = document.createElement('li');
+      li.innerHTML = `<div class="row"><span class="name">${esc(file.name)}</span><span class="state">Waiting</span></div><div class="bar"><i></i></div>`;
+      $('list').append(li);
+      queue.push({ file, li });
+    }
+    $('files').value = '';
+    summary();
+    run();
+  };
+
+  function summary() {
+    $('summary').hidden = !$('list').children.length;
+    $('summary').textContent = `${sent} of ${$('list').children.length} sent`;
+  }
+
+  async function run() {
+    if (busy || !conn?.open) return;
+    busy = true;
+    while (queue.length && conn?.open) {
+      await sendFile(queue.shift());
+      summary();
+    }
+    busy = false;
+  }
+
+  // Wait while the channel has a lot queued, so big files don't fill the phone's memory.
+  function drain(dc) {
+    if (dc.bufferedAmount < HIGH_WATER) return Promise.resolve();
+    return new Promise((resolve) => {
+      dc.bufferedAmountLowThreshold = HIGH_WATER / 4;
+      dc.addEventListener('bufferedamountlow', resolve, { once: true });
+    });
+  }
+
+  async function sendFile({ file, li }) {
+    const state = li.querySelector('.state');
+    const bar = li.querySelector('.bar i');
+    const fail = (msg) => {
+      li.classList.add('failed');
+      state.textContent = 'Failed';
+      li.insertAdjacentHTML('beforeend', `<div class="err">${esc(msg)}</div>`);
+    };
+    if (!AUDIO.test(file.name)) return fail("Yoke can't play this kind of file.");
+
+    const id = Math.random().toString(36).slice(2);
+    const reply = new Promise((resolve) => waiting.set(id, resolve));
+    const dc = conn.dataChannel;
+    conn.send(JSON.stringify({ type: 'file', id, name: file.name, size: file.size }));
+    state.textContent = 'Sending…';
+    try {
+      // Read 1 MB at a time, send in small pieces.
+      for (let offset = 0; offset < file.size; offset += 1048576) {
+        const block = await file.slice(offset, offset + 1048576).arrayBuffer();
+        for (let i = 0; i < block.byteLength; i += CHUNK) {
+          if (!conn.open) throw new Error('closed');
+          await drain(dc);
+          conn.send(block.slice(i, i + CHUNK));
+        }
+        const done = Math.max(0, offset + block.byteLength - dc.bufferedAmount);
+        bar.style.width = `${(done / file.size) * 100}%`;
+        state.textContent = `${Math.round((done / file.size) * 100)}% of ${mb(file.size)}`;
+      }
+      conn.send(JSON.stringify({ type: 'end', id }));
+    } catch {
+      waiting.delete(id);
+      return fail('Lost the connection to your PC.');
+    }
+    state.textContent = 'Saving on PC…';
+    bar.style.width = '100%';
+    const result = await reply;
+    if (result.type === 'saved') {
+      li.classList.add('done');
+      state.textContent = result.duplicate ? '✓ Already on PC' : '✓ Sent';
+      sent++;
+    } else {
+      fail(result.error || 'Something went wrong.');
+    }
+  }
+
+  // ----- start -----
+  // From the QR code: "#1234-<secret>" connects straight away.
+  const fromQr = location.hash.match(/^#(\d{4})-([0-9a-f]{32})$/);
+  if (fromQr) connect(fromQr[1], fromQr[2]);
+  else askForCode();
+</script>
+</body>
+</html>
