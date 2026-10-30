@@ -109,56 +109,59 @@
   <section class="block" id="new" style="padding-top:0">
     <div class="wrap">
       <div class="sec-head">
-        <span class="label">New in Yoke</span>
-        <h2>See it, hear it, make it yours.</h2>
-        <p>The latest updates bring visualizers, 3D audio, your own background image, and a home for your live concert recordings.</p>
+        <span class="label">New in Yoke 1.5</span>
+        <h2>Spin your CDs. Make Yoke your own.</h2>
+        <p>The latest update brings CD playback, plugins, an API for your own apps and tools, and five new visualizers.</p>
       </div>
       <div class="fresh">
         <article class="card viz">
-          <div class="viz-shot"><img src="assets/feature-visualizer.jpg" alt="The Ribbons visualizer in Yoke: glowing blue waveform lines across a black screen." width="1032" height="488" loading="lazy"></div>
+          <div class="viz-shot"><img src="assets/feature-cd.jpg" alt="Yoke's CD page playing an album from drive E, with its cover, Play, Shuffle and Eject buttons, and the CD being added to the library, track 4 of 10." width="1032" height="488" loading="lazy"></div>
           <div class="viz-text">
-            <h3>Visualizers</h3>
-            <p>Pick one of five visualizers to play with your music. Open it from the sidebar or press <span class="kbd">V</span>, then go full screen.</p>
+            <h3>Play your CDs</h3>
+            <p>Plug in a CD drive, even a USB one, and put in a music CD. Yoke plays it straight from the disc in full quality.</p>
             <ul class="viz-list">
-              <li><b>Spectrum Bars</b> · equalizer bars with falling peaks</li>
-              <li><b>Ribbons</b> · glowing waveform lines</li>
-              <li><b>Halo</b> · your album cover in a ring of light</li>
-              <li><b>Nebula</b> · clouds of colour that bloom with the music</li>
-              <li><b>Warp</b> · fly through the stars, faster on the bass</li>
+              <li><b>Names and covers</b> · found for you on MusicBrainz</li>
+              <li><b>Add to library</b> · copy a CD so it plays without the disc</li>
+              <li><b>Protected copies</b> · they only play in Yoke on your PC</li>
+              <li><b>Works with everything</b> · visualizers, 3D audio, Discord</li>
             </ul>
           </div>
         </article>
         <article class="card small">
-          <div class="feature-art live-art"><img src="assets/feature-live.png" alt="A live concert recording in Yoke's Live section, marked with a red LIVE tag, using a fan-made Good Faith Forever cover." width="190" height="210" loading="lazy"></div>
-          <h3>Live concerts</h3>
-          <p>Add your recordings of live shows and they get their own Live section, grouped by show, each with its own album.</p>
-          <p class="credit">Cover art: fan-made <cite>Good Faith Forever</cite> live album cover, shared on r/madeon. <a href="https://www.reddit.com/r/madeon/comments/1of21en/good_faith_forever_the_live_album/" target="_blank" rel="noopener">See the cover on Reddit →</a></p>
+          <div class="feature-art viz-art"><img src="assets/feature-viz-tunnel.jpg" alt="The Tunnel visualizer: glowing blue and purple hexagon rings rushing toward you." width="360" height="200" loading="lazy"></div>
+          <h3>Ten visualizers</h3>
+          <p>Five new ones: <b>Ridgeline</b>, <b>Tunnel</b>, <b>Prism</b>, <b>Sparks</b> and <b>Orbit</b>. Pick one in Settings, then press <span class="kbd">V</span>.</p>
         </article>
         <article class="card wide">
-          <div class="shot-frame"><img src="assets/feature-appearance.png" alt="Yoke's Appearance settings: a Dark, Light or Match Windows theme switch, 12 accent colours, and a background image with Change image, Remove and an opacity slider set to 35%." width="680" height="382" loading="lazy"></div>
+          <div class="shot-frame"><img src="assets/feature-plugins.jpg" alt="Yoke's Plugins settings: two plugins with on/off switches, View code and Remove buttons, and an Import plugin button." width="680" height="344" loading="lazy"></div>
           <div class="wide-text">
-            <h3>Your own background</h3>
-            <p>Set any image as Yoke's background, then fade it with the opacity slider until it sits just right.</p>
-            <p>Pair it with one of 12 accent colours and the background takes on the colour too. Go dark, light, or match Windows.</p>
+            <h3>Plugins</h3>
+            <p>Add plugins that bring new features or change how Yoke looks, and switch each one on or off.</p>
+            <p>Plugins stay off until you allow them, and Yoke shows you every plugin's code before it's added.</p>
           </div>
         </article>
         <article class="card small">
-          <div class="feature-art d3-art" style="border-color: #1C2840">
-            <span class="d3-shot">
-              <img src="assets/feature-3d.png" alt="Yoke's player bar buttons, with the 3D audio button switched on and glowing blue." width="125" height="81" loading="lazy">
-              <span class="d3-anchor" aria-hidden="true"><span class="ring r1"></span><span class="ring r2"></span><span class="ring r3"></span></span>
-            </span>
-          </div>
-          <h3>3D audio</h3>
-          <p>Tap the 3D button on the player bar for a wider, more spatial sound. It lights up while it's on.</p>
+          <div class="feature-art api-art" aria-hidden="true"><pre><span class="m">GET</span> /api/v1/player
+
+{
+  "playing": <span class="v">true</span>,
+  "track": {
+    "title": <span class="s">"City Lights"</span>,
+    "artist": <span class="s">"Night Drive"</span>
+  }
+}</pre></div>
+          <h3>Yoke API</h3>
+          <p>Let stream overlays, Stream Deck, bots and your own apps see what's playing and control Yoke.</p>
+          <a class="changelog" href="api.html">Read the API docs →</a>
         </article>
         <article class="card also">
-          <h3>Also new in 1.4.6</h3>
+          <h3>Also new in 1.5.1</h3>
           <ul class="mini-list">
-            <li>Light mode, or match Windows</li>
-            <li>12 accent colours</li>
-            <li>Pick your speakers or Bluetooth headphones</li>
-            <li>Play controls in the taskbar</li>
+            <li>More formats with FFmpeg</li>
+            <li>Fine-tune 3D audio</li>
+            <li>Rounder covers and a glowing play button</li>
+            <li>Settings grouped into sections</li>
+            <li>Switches to stay fully offline</li>
           </ul>
           <a class="changelog" href="whats-new.html">Read the release notes →</a>
         </article>

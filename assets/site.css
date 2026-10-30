@@ -309,6 +309,19 @@ footer img { height: 28px; width: auto; }
 .r-sub li { display: grid; grid-template-columns: 10px minmax(0, 1fr); gap: 10px; font-size: 15px; color: var(--muted); }
 .r-sub li::before { content: ""; width: 8px; height: 1.5px; background: var(--line); transform: translateY(-4px); align-self: center; border-radius: 0; }
 
+/* New in Yoke: visualizer still and API sample */
+.feature-art.viz-art { background: #03070A; }
+.viz-art img { width: 100%; height: 100%; object-fit: cover; }
+.feature-art.api-art {
+  place-items: center start; padding: 0 22px;
+  background: radial-gradient(70% 80% at 85% 20%, rgba(31, 91, 255, .2), transparent 70%), var(--bg-2);
+}
+.api-art pre { margin: 0; font: 12.5px/1.55 var(--font-mono); color: #C9CDDB; white-space: pre; }
+.api-art .m { color: #3BA55C; font-weight: 500; }
+.api-art .v { color: var(--blue-hi); }
+.api-art .s { color: #F0A21E; }
+.card.small .changelog { margin-top: auto; }
+
 /* API docs */
 .docs-req { font-family: var(--font-mono); font-size: 13px !important; color: var(--egg) !important; }
 .docs-layout { display: grid; grid-template-columns: 200px minmax(0, 860px); gap: 48px; padding-bottom: 110px; align-items: start; }
