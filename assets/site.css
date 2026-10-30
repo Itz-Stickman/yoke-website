@@ -309,6 +309,50 @@ footer img { height: 28px; width: auto; }
 .r-sub li { display: grid; grid-template-columns: 10px minmax(0, 1fr); gap: 10px; font-size: 15px; color: var(--muted); }
 .r-sub li::before { content: ""; width: 8px; height: 1.5px; background: var(--line); transform: translateY(-4px); align-self: center; border-radius: 0; }
 
+/* API docs */
+.docs-req { font-family: var(--font-mono); font-size: 13px !important; color: var(--egg) !important; }
+.docs-layout { display: grid; grid-template-columns: 200px minmax(0, 860px); gap: 48px; padding-bottom: 110px; align-items: start; }
+.docs-toc { position: sticky; top: 24px; display: grid; gap: 2px; font-size: 14.5px; }
+.docs-toc .label { margin: 14px 0 6px; font-size: 11.5px; }
+.docs-toc .label:first-child { margin-top: 0; }
+.docs-toc a { color: var(--muted); text-decoration: none; padding: 4px 0; font-weight: 600; }
+.docs-toc a:hover { color: var(--ink); }
+.docs-body { display: grid; gap: 18px; min-width: 0; }
+.docs-body section { min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 26px 26px 22px; scroll-margin-top: 24px; }
+.docs-body h2 { font-size: 28px; margin-bottom: 14px; }
+.docs-body h3 { font-family: var(--font-mono); font-size: 12.5px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.12em; color: var(--blue-hi); margin: 22px 0 10px; }
+.docs-body p, .docs-body li { color: #C9CDDB; font-size: 16px; }
+.docs-body p { margin: 10px 0; }
+.docs-body b { color: var(--ink); }
+.docs-body a { color: var(--blue-hi); }
+.docs-muted { color: var(--muted) !important; font-size: 15px !important; }
+.docs-steps { margin: 0 0 14px; padding-left: 22px; display: grid; gap: 8px; }
+.docs-body code { font-family: var(--font-mono); font-size: 13.5px; background: var(--panel-hi); border: 1px solid var(--line); padding: 1px 6px; border-radius: 6px; color: var(--ink); }
+.docs-body pre { background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; overflow-x: auto; margin: 12px 0; }
+.docs-body pre code { background: none; border: 0; padding: 0; font-size: 13.5px; line-height: 1.6; color: #C9CDDB; }
+.docs-note { background: var(--panel-hi); border: 1px solid var(--line); border-left: 3px solid var(--blue-hi); border-radius: 10px; padding: 12px 16px; margin: 14px 0 4px; font-size: 15px; color: #C9CDDB; }
+.docs-note.warn { border-left-color: #F0A21E; }
+.docs-table { overflow-x: auto; margin: 12px 0; }
+.docs-table table { border-collapse: collapse; width: 100%; font-size: 15px; }
+.docs-table th, .docs-table td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; color: #C9CDDB; }
+.docs-table th { font-family: var(--font-mono); font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+.docs-body .ep { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 22px 0 6px; padding-top: 16px; border-top: 1px dashed var(--line); }
+.docs-body section > h2 + p + .ep, .docs-body section > h2 + .ep { border-top: 0; padding-top: 0; }
+.docs-body .ep code { font-size: 14px; }
+.docs-body .m { font-family: var(--font-mono); font-size: 11.5px; font-weight: 500; letter-spacing: 0.08em; padding: 3px 9px; border-radius: 999px; }
+.docs-body .m.get { background: rgba(59, 165, 92, .16); color: #3BA55C; }
+.docs-body .m.post { background: rgba(31, 91, 255, .18); color: var(--blue-hi); }
+.docs-body .m.delete { background: rgba(242, 63, 67, .16); color: #F2585B; }
+.docs-body .m.ws { background: rgba(90, 72, 255, .2); color: #9C8CFF; }
+.docs-body .scope { margin-left: auto; font-family: var(--font-mono); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px; }
+@media (max-width: 900px) {
+  .docs-layout { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .docs-toc { position: static; display: flex; flex-wrap: wrap; gap: 4px 16px; }
+  .docs-toc .label { width: 100%; margin: 8px 0 0; }
+  .docs-body section { padding: 20px 16px; }
+  .docs-body .scope { margin-left: 0; }
+}
+
 /* Social links */
 footer .social { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; }
 footer .social a { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); text-decoration: none; font-weight: 600; }

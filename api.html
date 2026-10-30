@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>API · Yoke</title>
+<meta name="description" content="The Yoke API: see what's playing and control Yoke from your own app, overlay, Stream Deck or bot.">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png">
+<link rel="apple-touch-icon" href="assets/favicon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700;800&family=Figtree:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+<meta property="og:title" content="Yoke API">
+<meta property="og:description" content="See what's playing and control Yoke from your own app.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://yokebeat.com/api.html">
+<meta property="og:image" content="https://yokebeat.com/assets/yoke-monitor.png">
+<meta property="og:image:alt" content="Yoke running on a desktop monitor">
+<meta name="theme-color" content="#0A0B10">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@YokeBeats">
+</head>
+<body>
+
+<header class="wrap nav">
+  <a class="logo" href="./" aria-label="Yoke home"><img src="assets/yoke-wordmark.png" alt="Yoke" width="84" height="38"></a>
+  <nav class="nav-links" aria-label="Main">
+    <a href="./#inside">Features</a>
+    <a href="./#discord">Discord</a>
+    <a href="whats-new.html">What's new</a>
+    <a href="api.html" aria-current="page">API</a>
+    <a class="btn" href="./#download">Download</a>
+  </nav>
+</header>
+
+<main class="changes docs">
+  <div class="wrap">
+    <div class="page-head">
+      <span class="label">For developers · API v1</span>
+      <h1>The <span class="grad">Yoke</span> API</h1>
+      <p>See what's playing and control Yoke from your own app: stream overlays, Stream Deck and Streamer.bot buttons, desktop widgets, chat bots and more.</p>
+      <p class="docs-req">Needs Yoke 1.5 or later on Windows.</p>
+    </div>
+
+    <div class="docs-layout">
+      <nav class="docs-toc" aria-label="On this page">
+        <span class="label">Start</span>
+        <a href="#start">Getting started</a>
+        <a href="#auth">Authentication</a>
+        <a href="#errors">Errors</a>
+        <a href="#objects">Objects</a>
+        <span class="label">HTTP</span>
+        <a href="#player">Player</a>
+        <a href="#queue">Queue</a>
+        <a href="#library">Library</a>
+        <a href="#playlists">Playlists</a>
+        <span class="label">Live</span>
+        <a href="#events">WebSocket events</a>
+        <a href="#examples">Examples</a>
+      </nav>
+
+      <article class="docs-body">
+        <section id="start">
+          <h2>Getting started</h2>
+          <ol class="docs-steps">
+            <li>In Yoke, open <b>Settings → Advanced → Yoke API</b> and switch on <b>Turn on the Yoke API</b>.</li>
+            <li>Click <b>Create API key…</b>, name it after your app and pick what it may do. Copy the key (it starts with <code>yk_</code>). It's only shown once.</li>
+            <li>Send requests to <code>http://127.0.0.1:47321/api/v1</code>. The exact address, including the port, is shown in Yoke's settings.</li>
+          </ol>
+          <pre><code>curl -H "Authorization: Bearer yk_YOUR_KEY" http://127.0.0.1:47321/api/v1/player</code></pre>
+          <div class="docs-note">The API only answers on the PC running Yoke. To reach it from another device, the user turns on <b>Settings → Advanced → Local network</b>, then you use the PC's network address (shown in settings). Requests and replies are JSON. Cross-origin requests are allowed, so browser pages and overlays can call it directly.</div>
+        </section>
+
+        <section id="auth">
+          <h2>Authentication</h2>
+          <p>Every request needs a key, sent in one of these ways:</p>
+          <div class="docs-table"><table>
+            <tr><th>Where</th><th>Example</th></tr>
+            <tr><td>Header (preferred)</td><td><code>Authorization: Bearer yk_…</code></td></tr>
+            <tr><td>Header</td><td><code>X-Yoke-Key: yk_…</code></td></tr>
+            <tr><td>Query string (WebSockets, overlays)</td><td><code>?key=yk_…</code></td></tr>
+          </table></div>
+          <p>Each key has one or more permissions, chosen by the user:</p>
+          <div class="docs-table"><table>
+            <tr><th>Permission</th><th>Allows</th></tr>
+            <tr><td><code>read</code></td><td>Player state, queue, library, playlists, live events</td></tr>
+            <tr><td><code>control</code></td><td>Play, pause, skip, seek, volume, mute, shuffle, repeat, changing the queue</td></tr>
+            <tr><td><code>playlists</code></td><td>Creating playlists and adding or removing songs</td></tr>
+          </table></div>
+          <div class="docs-note warn">Treat keys like passwords. Users can delete a key at any time, which ends every request and live connection using it.</div>
+        </section>
+
+        <section id="errors">
+          <h2>Errors</h2>
+          <p>Errors use normal HTTP status codes with a JSON body:</p>
+          <pre><code>{ "error": "forbidden", "message": "This API key doesn't have the \"control\" permission." }</code></pre>
+          <div class="docs-table"><table>
+            <tr><th>Status</th><th><code>error</code></th><th>Meaning</th></tr>
+            <tr><td>400</td><td><code>bad_request</code>, <code>unknown_command</code></td><td>Something in the request is missing or wrong; <code>message</code> says what</td></tr>
+            <tr><td>401</td><td><code>unauthorized</code></td><td>No key, or the key doesn't exist (deleted?)</td></tr>
+            <tr><td>403</td><td><code>forbidden</code></td><td>The key doesn't have the needed permission</td></tr>
+            <tr><td>404</td><td><code>not_found</code></td><td>No such track, playlist or endpoint</td></tr>
+            <tr><td>409</td><td><code>nothing_playing</code>, <code>nothing_to_play</code></td><td>The action needs a song loaded</td></tr>
+            <tr><td>503</td><td><code>api_disabled</code>, <code>no_player</code></td><td>The user turned the API off, or the player isn't running</td></tr>
+            <tr><td>504</td><td><code>timeout</code></td><td>The player didn't answer in time; try again</td></tr>
+          </table></div>
+        </section>
+
+        <section id="objects">
+          <h2>Objects</h2>
+          <h3>Track</h3>
+          <pre><code>{
+  "id": "77f527e361909294",
+  "title": "Fire Away",
+  "artist": "Artist Name",
+  "albumArtist": "Artist Name",
+  "album": "Album Name",
+  "trackNo": 3, "discNo": 1, "year": 2024, "genre": "Rock",
+  "duration": 213.4,                   // seconds
+  "addedAt": 1761700000000,            // ms since 1970, or null
+  "coverUrl": "/api/cover/77f5…?v=e"   // relative to the server; null if no cover. No key needed.
+}</code></pre>
+          <h3>Player state</h3>
+          <pre><code>{
+  "playing": true,
+  "track": { …Track… },                // null when nothing is loaded
+  "position": 42.7,                    // seconds, at updatedAt
+  "duration": 213.4,
+  "volume": 0.8,                       // 0–1
+  "muted": false,
+  "shuffle": false,
+  "repeat": "off",                     // "off" | "all" | "one"
+  "queueIndex": 4,                     // current song's place in the queue, -1 if none
+  "queueLength": 25,
+  "updatedAt": 1761700123456           // ms since 1970
+}</code></pre>
+          <p class="docs-muted">While playing, the current position is about <code>position + (Date.now() - updatedAt) / 1000</code>.</p>
+          <h3>Playlist</h3>
+          <pre><code>{ "id": "8d7b…", "name": "Road Trip", "trackCount": 12 }</code></pre>
+        </section>
+
+        <section id="player">
+          <h2>Player</h2>
+          <p>Every control endpoint answers with the new <a href="#objects">player state</a>.</p>
+          <div class="ep"><span class="m get">GET</span><code>/api/v1</code><span class="scope">any key</span></div>
+          <p>Checks the key. Returns <code>{ name, version, apiVersion, key: { name, scopes } }</code>.</p>
+          <div class="ep"><span class="m get">GET</span><code>/api/v1/player</code><span class="scope">read</span></div>
+          <p>The current player state.</p>
+          <div class="ep"><span class="m post">POST</span><code>/api/v1/player/play</code> · <code>/pause</code> · <code>/toggle</code> · <code>/next</code> · <code>/previous</code><span class="scope">control</span></div>
+          <p>No body needed. <code>play</code> with nothing queued starts the library from the top.</p>
+          <div class="ep"><span class="m post">POST</span><code>/api/v1/player/seek</code><span class="scope">control</span></div>
+          <pre><code>{ "position": 60 }   // seconds</code></pre>
+          <div class="ep"><span class="m post">POST</span><code>/api/v1/player/volume</code><span class="scope">control</span></div>
+          <pre><code>{ "volume": 0.5 }    // 0–1</code></pre>
+          <div class="ep"><span class="m post">POST</span><code>/api/v1/player/mute</code> · <code>/shuffle</code> · <code>/repeat</code><span class="scope">control</span></div>
+          <pre><code>{ "muted": true }    // leave the body out to toggle
+{ "on": true }       // shuffle; leave out to toggle
+{ "mode": "all" }    // repeat: "off" | "all" | "one"; leave out to cycle</code></pre>
+        </section>
+
+        <section id="queue">
+          <h2>Queue</h2>
+          <div class="ep"><span class="m get">GET</span><code>/api/v1/queue</code><span class="scope">read</span></div>
+          <p>Returns <code>{ index, tracks: [Track…] }</code> in play order.</p>
+          <div class="ep"><span class="m post">POST</span><code>/api/v1/queue/play</code><span class="scope">control</span></div>
+          <p>Replaces the queue and starts playing. Give tracks or a playlist:</p>
+          <pre><code>{ "trackIds": ["77f5…", "a1b2…"], "index": 0, "shuffle": false }
+{ "playlistId": "8d7b…", "shuffle": true }</code></pre>
+          <div class="ep"><span class="m post">POST</span><code>/api/v1/queue</code><span class="scope">control</span></div>
+          <p>Adds to the queue. <code>"next": true</code> plays them right after the current song; otherwise they go at the end.</p>
+          <pre><code>{ "trackIds": ["77f5…"], "next": true }</code></pre>
+          <div class="ep"><span class="m post">POST</span><code>/api/v1/queue/jump</code><span class="scope">control</span></div>
+          <pre><code>{ "index": 3 }   // play the 4th song in the queue</code></pre>
+        </section>
+
+        <section id="library">
+          <h2>Library</h2>
+          <div class="ep"><span class="m get">GET</span><code>/api/v1/library/tracks</code><span class="scope">read</span></div>
+          <p>Query: <code>search</code> (matches title, artist, album), <code>limit</code> (1–1000, default 100), <code>offset</code>.</p>
+          <pre><code>GET /api/v1/library/tracks?search=fire&amp;limit=10
+→ { "total": 2, "offset": 0, "limit": 10, "tracks": [Track…] }</code></pre>
+          <div class="ep"><span class="m get">GET</span><code>/api/v1/library/tracks/:id</code><span class="scope">read</span></div>
+          <p>One track.</p>
+          <div class="ep"><span class="m get">GET</span><code>/api/cover/:id</code><span class="scope">no key</span></div>
+          <p>A track's cover image. Use the <code>coverUrl</code> from a track, joined to the server address.</p>
+        </section>
+
+        <section id="playlists">
+          <h2>Playlists</h2>
+          <div class="ep"><span class="m get">GET</span><code>/api/v1/playlists</code><span class="scope">read</span></div>
+          <p>Returns <code>{ playlists: [Playlist…] }</code>.</p>
+          <div class="ep"><span class="m get">GET</span><code>/api/v1/playlists/:id</code><span class="scope">read</span></div>
+          <p>The playlist plus <code>tracks: [Track…]</code>.</p>
+          <div class="ep"><span class="m post">POST</span><code>/api/v1/playlists</code><span class="scope">playlists</span></div>
+          <pre><code>{ "name": "Stream picks" }   → 201 with the new playlist</code></pre>
+          <div class="ep"><span class="m post">POST</span><code>/api/v1/playlists/:id/tracks</code><span class="scope">playlists</span></div>
+          <pre><code>{ "trackIds": ["77f5…"] }    // songs already in it are skipped</code></pre>
+          <div class="ep"><span class="m delete">DELETE</span><code>/api/v1/playlists/:id/tracks/:trackId</code><span class="scope">playlists</span></div>
+          <p>Removes a song from the playlist.</p>
+        </section>
+
+        <section id="events">
+          <h2>WebSocket events</h2>
+          <div class="ep"><span class="m ws">WS</span><code>ws://127.0.0.1:47321/api/v1/events?key=yk_…</code><span class="scope">read</span></div>
+          <p>Get changes the moment they happen instead of polling. Yoke sends:</p>
+          <div class="docs-table"><table>
+            <tr><th><code>type</code></th><th>When</th><th><code>data</code></th></tr>
+            <tr><td><code>hello</code></td><td>Right after connecting</td><td><code>{ name, version, apiVersion, scopes }</code></td></tr>
+            <tr><td><code>state</code></td><td>On connect, and whenever playback, volume, shuffle, repeat or the queue changes (about every 5 s while playing)</td><td>Player state</td></tr>
+            <tr><td><code>trackchange</code></td><td>A different song starts</td><td><code>{ track }</code></td></tr>
+          </table></div>
+          <pre><code>{ "type": "trackchange", "data": { "track": { "title": "Fire Away", … } } }</code></pre>
+          <p>With the <code>control</code> permission you can also send commands over the same connection. Add an <code>id</code> to match the reply:</p>
+          <pre><code>→ { "id": 1, "command": "next" }
+← { "id": 1, "ok": true, "state": { … } }
+
+→ { "id": 2, "command": "volume", "args": { "volume": 0.4 } }
+→ { "id": 3, "command": "playTracks", "args": { "trackIds": ["77f5…"], "index": 0 } }
+→ { "id": 4, "command": "getState" }        // read permission is enough</code></pre>
+          <p>Commands: <code>play</code>, <code>pause</code>, <code>toggle</code>, <code>next</code>, <code>previous</code>, <code>seek</code> {position}, <code>volume</code> {volume}, <code>mute</code> {muted?}, <code>shuffle</code> {on?}, <code>repeat</code> {mode?}, <code>playTracks</code> {trackIds, index?, shuffle?}, <code>enqueue</code> {trackIds, next?}, <code>jump</code> {index}, <code>getState</code>.</p>
+          <p class="docs-muted">The connection closes with code <code>4001</code> if the key is deleted or the API is turned off.</p>
+        </section>
+
+        <section id="examples">
+          <h2>Examples</h2>
+          <h3>JavaScript (browser or Node 22+)</h3>
+          <pre><code>const BASE = 'http://127.0.0.1:47321';
+const KEY = 'yk_YOUR_KEY';
+
+// Skip to the next song
+await fetch(`${BASE}/api/v1/player/next`, { method: 'POST', headers: { Authorization: `Bearer ${KEY}` } });
+
+// Follow along live
+const ws = new WebSocket(`ws://127.0.0.1:47321/api/v1/events?key=${KEY}`);
+ws.onmessage = (e) =&gt; {
+  const msg = JSON.parse(e.data);
+  if (msg.type === 'trackchange') console.log('Now playing:', msg.data.track.title);
+};</code></pre>
+          <h3>Python</h3>
+          <pre><code>import requests
+BASE, KEY = "http://127.0.0.1:47321/api/v1", "yk_YOUR_KEY"
+h = {"Authorization": f"Bearer {KEY}"}
+
+state = requests.get(f"{BASE}/player", headers=h).json()
+print(state["track"]["title"] if state["track"] else "Nothing playing")
+requests.post(f"{BASE}/player/volume", json={"volume": 0.5}, headers=h)</code></pre>
+          <h3>Streamer.bot, Touch Portal and similar</h3>
+          <p>Use an HTTP request action (for example <code>POST …/api/v1/player/toggle</code> with the <code>Authorization</code> header), or a WebSocket client connected to <code>/api/v1/events?key=…</code> to react to <code>trackchange</code> and send commands.</p>
+        </section>
+      </article>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <img src="assets/yoke-wordmark.png" alt="Yoke" width="62" height="28">
+    <span>© 2026 Yoke · No ads. No account. Just your music.</span>
+    <nav class="social" aria-label="Yoke on social media">
+      <a href="https://x.com/YokeBeats" target="_blank" rel="noopener me"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.8 3h3.1l-6.8 7.7L22 21h-6.2l-4.9-6.4L5.3 21H2.2l7.2-8.3L2 3h6.4l4.4 5.8L17.8 3zm-1.1 16.2h1.7L7.4 4.7H5.6l11.1 14.5z"/></svg><span>@YokeBeats</span></a>
+      <a href="https://www.instagram.com/yokebeat/" target="_blank" rel="noopener me"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.2c3.2 0 3.6 0 4.8.1 3.2.1 4.8 1.7 4.9 4.9.1 1.3.1 1.6.1 4.8s0 3.6-.1 4.8c-.1 3.2-1.7 4.8-4.9 4.9-1.3.1-1.6.1-4.8.1s-3.6 0-4.8-.1c-3.3-.1-4.8-1.7-4.9-4.9-.1-1.3-.1-1.6-.1-4.8s0-3.6.1-4.8C2.4 4 3.9 2.4 7.2 2.3c1.2-.1 1.6-.1 4.8-.1zM12 0C8.7 0 8.3 0 7.1.1 2.7.3.3 2.7.1 7.1 0 8.3 0 8.7 0 12s0 3.7.1 4.9c.2 4.4 2.6 6.8 7 7 1.2.1 1.6.1 4.9.1s3.7 0 4.9-.1c4.4-.2 6.8-2.6 7-7 .1-1.2.1-1.6.1-4.9s0-3.7-.1-4.9c-.2-4.4-2.6-6.8-7-7C15.7 0 15.3 0 12 0zm0 5.8a6.2 6.2 0 1 0 0 12.4 6.2 6.2 0 0 0 0-12.4zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.4-11.8a1.4 1.4 0 1 0 0 2.9 1.4 1.4 0 0 0 0-2.9z"/></svg><span>@yokebeat</span></a>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
