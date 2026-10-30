@@ -118,24 +118,26 @@
   "albumArtist": "Artist Name",
   "album": "Album Name",
   "trackNo": 3, "discNo": 1, "year": 2024, "genre": "Rock",
-  "duration": 213.4,                   // seconds
-  "addedAt": 1761700000000,            // ms since 1970, or null
-  "coverUrl": "/api/cover/77f5…?v=e"   // relative to the server; null if no cover. No key needed.
+  "duration": 213.4,
+  "addedAt": 1761700000000,
+  "coverUrl": "/api/cover/77f5…?v=e"
 }</code></pre>
+          <p><code>duration</code> is in seconds. <code>addedAt</code> is milliseconds since 1970, or <code>null</code>. <code>coverUrl</code> is relative to the server, <code>null</code> if there's no cover, and needs no key.</p>
           <h3>Player state</h3>
           <pre><code>{
   "playing": true,
-  "track": { …Track… },                // null when nothing is loaded
-  "position": 42.7,                    // seconds, at updatedAt
+  "track": { …Track… },
+  "position": 42.7,
   "duration": 213.4,
-  "volume": 0.8,                       // 0–1
+  "volume": 0.8,
   "muted": false,
   "shuffle": false,
-  "repeat": "off",                     // "off" | "all" | "one"
-  "queueIndex": 4,                     // current song's place in the queue, -1 if none
+  "repeat": "off",
+  "queueIndex": 4,
   "queueLength": 25,
-  "updatedAt": 1761700123456           // ms since 1970
+  "updatedAt": 1761700123456
 }</code></pre>
+          <p><code>track</code> is <code>null</code> when nothing is loaded. <code>position</code> and <code>duration</code> are in seconds (<code>position</code> as of <code>updatedAt</code>). <code>volume</code> is 0–1. <code>repeat</code> is <code>"off"</code>, <code>"all"</code> or <code>"one"</code>. <code>queueIndex</code> is the current song's place in the queue, or -1. <code>updatedAt</code> is milliseconds since 1970.</p>
           <p class="docs-muted">While playing, the current position is about <code>position + (Date.now() - updatedAt) / 1000</code>.</p>
           <h3>Playlist</h3>
           <pre><code>{ "id": "8d7b…", "name": "Road Trip", "trackCount": 12 }</code></pre>
@@ -151,13 +153,16 @@
           <div class="ep"><span class="m post">POST</span><code>/api/v1/player/play</code> · <code>/pause</code> · <code>/toggle</code> · <code>/next</code> · <code>/previous</code><span class="scope">control</span></div>
           <p>No body needed. <code>play</code> with nothing queued starts the library from the top.</p>
           <div class="ep"><span class="m post">POST</span><code>/api/v1/player/seek</code><span class="scope">control</span></div>
-          <pre><code>{ "position": 60 }   // seconds</code></pre>
+          <pre><code>{ "position": 60 }</code></pre>
+          <p><code>position</code> is in seconds.</p>
           <div class="ep"><span class="m post">POST</span><code>/api/v1/player/volume</code><span class="scope">control</span></div>
-          <pre><code>{ "volume": 0.5 }    // 0–1</code></pre>
+          <pre><code>{ "volume": 0.5 }</code></pre>
+          <p><code>volume</code> is from 0 to 1.</p>
           <div class="ep"><span class="m post">POST</span><code>/api/v1/player/mute</code> · <code>/shuffle</code> · <code>/repeat</code><span class="scope">control</span></div>
-          <pre><code>{ "muted": true }    // leave the body out to toggle
-{ "on": true }       // shuffle; leave out to toggle
-{ "mode": "all" }    // repeat: "off" | "all" | "one"; leave out to cycle</code></pre>
+          <pre><code>{ "muted": true }
+{ "on": true }
+{ "mode": "all" }</code></pre>
+          <p>Leave the body out to toggle mute or shuffle, or to cycle through repeat modes (<code>"off"</code>, <code>"all"</code>, <code>"one"</code>).</p>
         </section>
 
         <section id="queue">
@@ -172,7 +177,8 @@
           <p>Adds to the queue. <code>"next": true</code> plays them right after the current song; otherwise they go at the end.</p>
           <pre><code>{ "trackIds": ["77f5…"], "next": true }</code></pre>
           <div class="ep"><span class="m post">POST</span><code>/api/v1/queue/jump</code><span class="scope">control</span></div>
-          <pre><code>{ "index": 3 }   // play the 4th song in the queue</code></pre>
+          <pre><code>{ "index": 3 }</code></pre>
+          <p><code>index</code> starts at 0, so this plays the 4th song in the queue.</p>
         </section>
 
         <section id="library">
@@ -196,7 +202,8 @@
           <div class="ep"><span class="m post">POST</span><code>/api/v1/playlists</code><span class="scope">playlists</span></div>
           <pre><code>{ "name": "Stream picks" }   → 201 with the new playlist</code></pre>
           <div class="ep"><span class="m post">POST</span><code>/api/v1/playlists/:id/tracks</code><span class="scope">playlists</span></div>
-          <pre><code>{ "trackIds": ["77f5…"] }    // songs already in it are skipped</code></pre>
+          <pre><code>{ "trackIds": ["77f5…"] }</code></pre>
+          <p>Songs already in the playlist are skipped.</p>
           <div class="ep"><span class="m delete">DELETE</span><code>/api/v1/playlists/:id/tracks/:trackId</code><span class="scope">playlists</span></div>
           <p>Removes a song from the playlist.</p>
         </section>
@@ -218,7 +225,8 @@
 
 → { "id": 2, "command": "volume", "args": { "volume": 0.4 } }
 → { "id": 3, "command": "playTracks", "args": { "trackIds": ["77f5…"], "index": 0 } }
-→ { "id": 4, "command": "getState" }        // read permission is enough</code></pre>
+→ { "id": 4, "command": "getState" }</code></pre>
+          <p><code>getState</code> only needs the <code>read</code> permission.</p>
           <p>Commands: <code>play</code>, <code>pause</code>, <code>toggle</code>, <code>next</code>, <code>previous</code>, <code>seek</code> {position}, <code>volume</code> {volume}, <code>mute</code> {muted?}, <code>shuffle</code> {on?}, <code>repeat</code> {mode?}, <code>playTracks</code> {trackIds, index?, shuffle?}, <code>enqueue</code> {trackIds, next?}, <code>jump</code> {index}, <code>getState</code>.</p>
           <p class="docs-muted">The connection closes with code <code>4001</code> if the key is deleted or the API is turned off.</p>
         </section>
@@ -229,15 +237,14 @@
           <pre><code>const BASE = 'http://127.0.0.1:47321';
 const KEY = 'yk_YOUR_KEY';
 
-// Skip to the next song
 await fetch(`${BASE}/api/v1/player/next`, { method: 'POST', headers: { Authorization: `Bearer ${KEY}` } });
 
-// Follow along live
 const ws = new WebSocket(`ws://127.0.0.1:47321/api/v1/events?key=${KEY}`);
 ws.onmessage = (e) =&gt; {
   const msg = JSON.parse(e.data);
   if (msg.type === 'trackchange') console.log('Now playing:', msg.data.track.title);
 };</code></pre>
+          <p>This skips to the next song, then logs each new song as it starts.</p>
           <h3>Python</h3>
           <pre><code>import requests
 BASE, KEY = "http://127.0.0.1:47321/api/v1", "yk_YOUR_KEY"
