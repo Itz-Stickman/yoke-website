@@ -41,14 +41,18 @@
   .controls { display: flex; align-items: center; justify-content: center; gap: 10px; }
   .ctl {
     width: 48px; height: 48px; border-radius: 50%; border: 0; background: var(--panel-hi); color: var(--ink);
-    font-size: 18px; display: grid; place-items: center; cursor: pointer;
+    display: grid; place-items: center; cursor: pointer; padding: 0;
   }
-  .ctl.main { width: 68px; height: 68px; font-size: 24px; color: #fff; background: linear-gradient(180deg, #2E6BFF, var(--blue)); }
-  .ctl.on { color: var(--blue-hi); outline: 1px solid var(--blue-hi); }
-  .volume { display: flex; align-items: center; gap: 10px; }
+  .ctl svg { width: 22px; height: 22px; display: block; }
+  .ctl.main { width: 68px; height: 68px; color: #fff; background: linear-gradient(180deg, #2E6BFF, var(--blue)); }
+  .ctl.main svg { width: 32px; height: 32px; }
+  .ctl.on { color: var(--blue-hi); background: rgba(31, 91, 255, .18); }
+  .volume { display: flex; align-items: center; gap: 12px; }
+  .vol-icon { width: 22px; height: 22px; object-fit: contain; flex: none; }
   .tabs { display: flex; gap: 6px; }
-  .tabs button { flex: 1; padding: 9px 0; border: 1px solid var(--line); border-radius: 999px; background: none; color: var(--muted); font: 600 14px var(--font-body); cursor: pointer; }
+  .tabs button { flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px; padding: 9px 0; border: 1px solid var(--line); border-radius: 999px; background: none; color: var(--muted); font: 600 14px var(--font-body); cursor: pointer; }
   .tabs button.on { background: var(--panel-hi); color: var(--ink); }
+  .tabs svg { width: 16px; height: 16px; display: block; flex: none; }
   .search { width: 100%; padding: 11px 14px; background: var(--panel-hi); color: var(--ink); border: 1px solid var(--line); border-radius: 12px; font: inherit; }
   .rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
   .rows button { width: 100%; text-align: left; padding: 10px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; color: var(--ink); font: inherit; cursor: pointer; }
@@ -93,20 +97,20 @@
       <div class="times"><span id="pos">0:00</span><span id="len">0:00</span></div>
     </div>
     <div class="controls">
-      <button class="ctl" id="shuffle" aria-label="Shuffle">⤨</button>
-      <button class="ctl" id="prev" aria-label="Previous">⏮</button>
-      <button class="ctl main" id="toggle" aria-label="Play or pause">▶</button>
-      <button class="ctl" id="next" aria-label="Next">⏭</button>
-      <button class="ctl" id="repeat" aria-label="Repeat">↻</button>
+      <button class="ctl" id="shuffle" aria-label="Shuffle"></button>
+      <button class="ctl" id="prev" aria-label="Previous"></button>
+      <button class="ctl main" id="toggle" aria-label="Play or pause"></button>
+      <button class="ctl" id="next" aria-label="Next"></button>
+      <button class="ctl" id="repeat" aria-label="Repeat"></button>
     </div>
     <div class="volume">
-      <span aria-hidden="true">🔈</span>
+      <img class="vol-icon" id="vol-icon" src="icons/volume-medium.png" alt="">
       <input type="range" id="volume" min="0" max="1" step="0.01" value="0.8" aria-label="Volume on your PC">
     </div>
     <div class="tabs">
-      <button data-tab="search" class="on">Search</button>
-      <button data-tab="playlists">Playlists</button>
-      <button data-tab="stations">Radio</button>
+      <button data-tab="search" class="on"></button>
+      <button data-tab="playlists"></button>
+      <button data-tab="stations"></button>
     </div>
     <input class="search" id="search" type="search" placeholder="Search your library" aria-label="Search your library">
     <ul class="rows" id="rows"></ul>
@@ -121,6 +125,26 @@
   const RETRY_MS = 5000;
   const COMMAND_TIMEOUT_MS = 10000;
   const $ = (id) => document.getElementById(id);
+  // Same 24px icons as Yoke's player bar (public/app.js).
+  const svg = (body, fill = 'none') => `<svg viewBox="0 0 24 24" fill="${fill}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
+  const ICONS = {
+    shuffle: svg('<path d="M16 3h5v5"/><path d="M4 20 21 3"/><path d="M21 16v5h-5"/><path d="m15 15 6 6"/><path d="M4 4l5 5"/>'),
+    prev: svg('<path d="M19 20 9 12l10-8z" fill="currentColor"/><path d="M5 19V5"/>'),
+    next: svg('<path d="m5 4 10 8-10 8z" fill="currentColor"/><path d="M19 5v14"/>'),
+    repeat: svg('<path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/>'),
+    repeatOne: svg('<path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/><path d="M11 10h1v4"/>'),
+    play: svg('<path d="M8 5.5v13l10.5-6.5z"/>', 'currentColor'),
+    pause: svg('<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>', 'currentColor'),
+    search: svg('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>'),
+    playlists: svg('<path d="M3 6h13"/><path d="M3 12h9"/><path d="M3 18h6"/><path d="M16 18V9l5-1.5"/><circle cx="14" cy="18" r="2"/>'),
+    stations: svg('<circle cx="12" cy="12" r="2"/><path d="M16.2 7.8a6 6 0 0 1 0 8.4"/><path d="M7.8 16.2a6 6 0 0 1 0-8.4"/><path d="M19 5a10 10 0 0 1 0 14"/><path d="M5 19A10 10 0 0 1 5 5"/>'),
+  };
+  for (const id of ['shuffle', 'prev', 'next', 'repeat']) $(id).innerHTML = ICONS[id];
+  $('toggle').innerHTML = ICONS.play;
+  for (const [tabName, label] of [['search', 'Search'], ['playlists', 'Playlists'], ['stations', 'Radio']]) {
+    document.querySelector(`[data-tab="${tabName}"]`).innerHTML = `${ICONS[tabName]}<span>${label}</span>`;
+  }
+  const volumeIcon = (v, muted) => (muted || v === 0 ? 'muted' : v < 0.34 ? 'low' : v < 0.67 ? 'medium' : 'high');
   const STEPS = ['step-wait', 'step-start', 'step-code', 'step-remote'];
   const show = (id) => STEPS.forEach((s) => ($(s).hidden = s !== id));
   const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
@@ -248,10 +272,11 @@
     const t = player?.track;
     $('title').textContent = t ? t.title : 'Nothing playing';
     $('artist').textContent = t ? t.artist : '';
-    $('toggle').textContent = player?.playing ? '⏸' : '▶';
+    $('toggle').innerHTML = player?.playing ? ICONS.pause : ICONS.play;
     $('shuffle').classList.toggle('on', Boolean(player?.shuffle));
     $('repeat').classList.toggle('on', player && player.repeat !== 'off');
-    $('repeat').textContent = player?.repeat === 'one' ? '①' : '↻';
+    $('repeat').innerHTML = player?.repeat === 'one' ? ICONS.repeatOne : ICONS.repeat;
+    $('vol-icon').src = `icons/volume-${volumeIcon(player?.volume ?? 0.8, player?.muted)}.png`;
     if (document.activeElement !== $('volume')) $('volume').value = player?.volume ?? 0.8;
     tick();
   }
