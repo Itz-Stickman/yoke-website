@@ -5,13 +5,39 @@
   var DOWNLOAD_BASE = 'https://github.com/' + REPO + '/releases/download/';
   var CACHE_KEY = 'yoke-releases-v2';
 
-  var FALLBACK = ['1.4.6', '1.4.5', '1.4.0', '1.3.1', '1.3.0'].map(function (v) {
-    return { version: v, date: '2026-10-28', setup: 'Yoke-Setup-' + v + '.exe', portable: 'Yoke-' + v + '-portable.exe' };
+  var FALLBACK = [['1.5.1', '2026-10-30'], ['1.4.6', '2026-10-28'], ['1.4.5', '2026-10-28'], ['1.4.0', '2026-10-28'], ['1.3.1', '2026-10-28'], ['1.3.0', '2026-10-28']].map(function (v) {
+    return { version: v[0], date: v[1], setup: 'Yoke-Setup-' + v[0] + '.exe', portable: 'Yoke-' + v[0] + '-portable.exe' };
   });
 
   // Notes written for the site, in the same Markdown as GitHub releases.
   // If a GitHub release has its own notes, those win.
   var NOTES = {
+    '1.5.1': [
+      '## ✨ New',
+      '- **Play CDs.** Plug in a CD drive (USB works) and a new **CD** page appears in the sidebar. Put in a music CD and Yoke plays it straight from the disc in full quality.',
+      '  - Album, song names and cover art are found automatically on **MusicBrainz**.',
+      '  - The visualizer, 3D Audio, output device picker and Discord status all work with CDs.',
+      '  - **⏏ Eject** pops the disc out from inside Yoke.',
+      '- **Add CDs to your library.** **＋ Add to library** copies a CD so you can play it without the disc, lossless, with names and cover included.',
+      '  - Copies are protected: they\'re encrypted and only play in Yoke on your PC and Windows account, so they can\'t be shared or opened in other apps.',
+      '- **Plugins.** A new **Plugins** section in Settings lets you add plugins that bring new features (.js files) or change how Yoke looks (.css files), and turn each one on or off.',
+      '  - Plugins are off until you allow them, and Yoke shows you every plugin\'s full code to check before it\'s added.',
+      '- **Yoke API.** Stream overlays, Stream Deck, Streamer.bot and other apps can now see what\'s playing and control Yoke.',
+      '  - Turn it on and create a key for each app in **Settings → Advanced → Yoke API**. Each key only gets the permissions you choose, and you can delete it any time.',
+      '  - Developer docs are at **yokebeat.com/api.html**.',
+      '- **More music formats with FFmpeg.** With FFmpeg installed, Yoke also plays **WMA, AIFF, APE, WavPack, DSD, TTA, MKA, AC3** and **Musepack**. Set it up in **Settings → Audio Format**.',
+      '- **Tune 3D Audio.** New sliders in **Settings → 3D Audio** for **stereo width**, **speaker angle**, **room size** and **centre focus**.',
+      '- **Five new visualizers:** **Ridgeline**, **Tunnel**, **Prism**, **Sparks** and **Orbit**. That makes ten in all.',
+      '- **Player options** in **Settings → Appearance**: **rounder album covers**, a **glow around the play button**, and a **"Now playing"** pop-up when a new song starts. All on by default and easy to switch off.',
+      '- **Online services switches.** Turn off lyrics, artist pictures, CD names or Discord album covers individually to keep Yoke fully offline.',
+      '## 🔄 Changed',
+      '- **Settings are now grouped into sections**: General, Appearance, Audio Format, 3D Audio, Plugins, Advanced and About.',
+      '- **Listening on other devices** is now a switch in **Settings → Advanced → Local network** (you can set the port there too), instead of editing a config file. Your old setting carries over.',
+      '- **Your own Discord application ID** has moved to **Settings → Advanced**.',
+      '- **Choosing a visualizer** is now a dropdown with a preview in Settings; the Visualizer page shows the name with ‹ › arrows.',
+      '## 🔧 Fixed',
+      '- **Songs that wouldn\'t play were skipped silently.** Yoke now retries them through FFmpeg (this fixes Apple Lossless files saved as .m4a), and if a song still can\'t play it tells you why.'
+    ].join('\n'),
     '1.4.6': [
       '## ✨ New',
       '- **Light mode.** Settings → Appearance now has a **Theme** switch: **Dark**, **Light** or **Match Windows**. Match Windows follows your Windows setting and switches live, title bar included.',

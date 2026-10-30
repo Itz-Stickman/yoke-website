@@ -42,7 +42,7 @@
       <h1>What's new in <span class="grad">Yoke</span></h1>
       <p>Every update, newest first. Open a version to see what changed.</p>
       <div class="dl-row">
-        <a class="btn" data-dl="setup" href="https://github.com/Itz-Stickman/yoke-releases/releases/download/v1.4.6/Yoke-Setup-1.4.6.exe" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5.5 10.5 4.4v7.1H3zm8.5-1.2L21 3v8.5h-9.5zM3 12.5h7.5v7.1L3 18.5zm8.5 0H21V21l-9.5-1.3z"/></svg>Download <span data-version>1.4.6</span></a>
+        <a class="btn" data-dl="setup" href="https://github.com/Itz-Stickman/yoke-releases/releases/download/v1.5.1/Yoke-Setup-1.5.1.exe" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5.5 10.5 4.4v7.1H3zm8.5-1.2L21 3v8.5h-9.5zM3 12.5h7.5v7.1L3 18.5zm8.5 0H21V21l-9.5-1.3z"/></svg>Download <span data-version>1.5.1</span></a>
       </div>
     </div>
 
@@ -114,7 +114,8 @@
             richText(text, it.text);
             if (it.sub.length) {
               const sub = el('ul', 'r-sub');
-              it.sub.forEach((t) => { const s = el('li'); richText(s, t); sub.appendChild(s); });
+              // One wrapper per sub-item: the li is a grid, so bare text and <strong> would split into cells.
+              it.sub.forEach((t) => { const s = el('li'); const span = el('span'); richText(span, t); s.appendChild(span); sub.appendChild(s); });
               text.appendChild(sub);
             }
             li.appendChild(text);
