@@ -73,10 +73,13 @@
     <button class="btn" id="retry" hidden>Try again</button>
   </div>
 
-  <div class="card center" id="step-start" hidden>
-    <b>Pair your phone</b>
-    <p class="msg">In Yoke on your PC, open <b>Settings → Advanced → Phone remote</b>, click <b>Pair a phone</b> and scan the QR code.</p>
-  </div>
+  <form class="card center" id="step-start" hidden>
+    <b>Pair with Yoke</b>
+    <p class="msg">In Yoke on your PC, open <b>Settings → Advanced → Phone remote</b> and click <b>Pair a phone</b>. Then enter the 6-digit code here.</p>
+    <input class="code-input" id="start-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" aria-label="6-digit code">
+    <div class="msg bad" id="start-err"></div>
+    <button class="btn" type="submit">Pair</button>
+  </form>
 
   <form class="card center" id="step-code" hidden>
     <b>Enter the 6-digit code shown in Yoke on your PC</b>
@@ -168,24 +171,45 @@
 
   function disconnect() {
     clearTimeout(retry);
-    peer?.destroy();
+    const old = peer;
     peer = conn = null;
     ready = false;
+    old?.destroy();
   }
 
-  function connect(first) {
+  function connect(first, onFail = failed) {
     disconnect();
-    peer = new Peer({ debug: 0 });
-    const giveUp = setTimeout(failed, 20000);
-    peer.on('error', () => { clearTimeout(giveUp); failed(); });
-    peer.on('open', () => {
-      conn = peer.connect(peerId, { reliable: true });
-      conn.on('open', () => {
+    const mine = new Peer({ debug: 0 });
+    peer = mine;
+    // Events from a connection we've already replaced are ignored.
+    const fail = () => {
+      clearTimeout(giveUp);
+      if (peer === mine) onFail();
+    };
+    const giveUp = setTimeout(fail, 20000);
+    mine.on('error', fail);
+    mine.on('open', () => {
+      const c = mine.connect(peerId, { reliable: true });
+      conn = c;
+      c.on('open', () => {
         clearTimeout(giveUp);
-        conn.send(first);
+        c.send(first);
       });
-      conn.on('data', onMessage);
-      conn.on('close', failed);
+      c.on('data', onMessage);
+      c.on('close', fail);
+    });
+  }
+
+  // Pairing with only the code: it's what a home-screen app needs, since a QR code can't open it.
+  function pairByCode(code) {
+    $('start-err').textContent = '';
+    wait('Connecting to your PC…');
+    peerId = `yokebeat-pair-${code}`;
+    connect({ type: 'pair-code', code, device }, () => {
+      disconnect();
+      show('step-start');
+      $('start-code').value = '';
+      $('start-err').textContent = "No Yoke found with that code. Check it, and keep Yoke's Pair a phone window open.";
     });
   }
 
@@ -217,13 +241,15 @@
       $('code').value = '';
       $('code-err').textContent = `That code isn't right. ${msg.left} ${msg.left === 1 ? 'try' : 'tries'} left.`;
     } else if (msg.type === 'paired') {
-      save({ peerId, id: msg.id, token: msg.token });
+      save({ peerId: msg.peerId || peerId, id: msg.id, token: msg.token });
+      // Paired by code: that connection is temporary, so move to the PC's real one.
+      if (msg.peerId) reconnect();
     } else if (msg.type === 'denied') {
       if (msg.reason === 'unpaired') forget();
       disconnect();
       if (msg.reason === 'tries') wait('Too many wrong codes. Start pairing again in Yoke.', true);
       else if (msg.reason === 'unpaired') { $('unpair').hidden = true; show('step-start'); }
-      else wait('That QR code has expired. Click Pair a phone in Yoke and scan the new one.', true);
+      else wait('That code has expired. Click Pair a phone in Yoke to get a new one.', true);
     } else if (msg.type === 'state') {
       if (!ready) {
         ready = true;
@@ -370,6 +396,14 @@
     e.preventDefault();
     $('code-err').textContent = '';
     if ($('code').value.length === 6 && conn?.open) conn.send({ type: 'code', code: $('code').value, device });
+  };
+  $('start-code').oninput = () => {
+    $('start-code').value = $('start-code').value.replace(/D/g, '').slice(0, 6);
+    if ($('start-code').value.length === 6) $('step-start').requestSubmit();
+  };
+  $('step-start').onsubmit = (e) => {
+    e.preventDefault();
+    if ($('start-code').value.length === 6) pairByCode($('start-code').value);
   };
   $('retry').onclick = start;
   $('unpair').onclick = () => {
