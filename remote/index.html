@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Yoke Remote</title>
+<meta name="description" content="Control Yoke on your PC from your phone.">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png">
+<link rel="apple-touch-icon" href="../assets/favicon-192.png">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Yoke Remote">
+<meta name="theme-color" content="#0A0B10">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700;800&family=Figtree:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../assets/site.css">
+<style>
+  body { padding: max(16px, env(safe-area-inset-top, 0px)) 16px max(24px, env(safe-area-inset-bottom, 0px)); }
+  main { max-width: 480px; margin: 0 auto; display: grid; gap: 16px; }
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .top img { height: 34px; width: auto; }
+  .link { background: none; border: 0; padding: 4px; color: var(--muted); font: inherit; font-size: 14px; cursor: pointer; text-decoration: underline; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 22px 18px; }
+  .center { display: grid; justify-items: center; gap: 14px; text-align: center; }
+  .msg { color: var(--muted); font-size: 15px; }
+  .msg.bad { color: #ff6b6e; min-height: 1.4em; }
+  .spinner { width: 34px; height: 34px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--blue-hi); animation: spin .9s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .code-input {
+    width: 240px; max-width: 100%; text-align: center; font: 500 34px/1 var(--font-mono); letter-spacing: .2em;
+    background: var(--panel-hi); color: var(--ink); border: 1px solid var(--line); border-radius: 14px; padding: 14px 0 14px .2em;
+  }
+  .code-input:focus { outline: none; border-color: var(--blue-hi); }
+  .art { width: min(72vw, 300px); height: min(72vw, 300px); border-radius: 18px; object-fit: cover; background: var(--panel-hi); justify-self: center; }
+  .title { font-family: var(--font-display); font-size: 22px; font-weight: 700; overflow-wrap: anywhere; }
+  .now { display: grid; gap: 8px; text-align: center; }
+  .times { display: flex; justify-content: space-between; color: var(--muted); font: 13px var(--font-mono); }
+  input[type=range] { width: 100%; accent-color: var(--blue-hi); }
+  .controls { display: flex; align-items: center; justify-content: center; gap: 10px; }
+  .ctl {
+    width: 48px; height: 48px; border-radius: 50%; border: 0; background: var(--panel-hi); color: var(--ink);
+    font-size: 18px; display: grid; place-items: center; cursor: pointer;
+  }
+  .ctl.main { width: 68px; height: 68px; font-size: 24px; color: #fff; background: linear-gradient(180deg, #2E6BFF, var(--blue)); }
+  .ctl.on { color: var(--blue-hi); outline: 1px solid var(--blue-hi); }
+  .volume { display: flex; align-items: center; gap: 10px; }
+  .tabs { display: flex; gap: 6px; }
+  .tabs button { flex: 1; padding: 9px 0; border: 1px solid var(--line); border-radius: 999px; background: none; color: var(--muted); font: 600 14px var(--font-body); cursor: pointer; }
+  .tabs button.on { background: var(--panel-hi); color: var(--ink); }
+  .search { width: 100%; padding: 11px 14px; background: var(--panel-hi); color: var(--ink); border: 1px solid var(--line); border-radius: 12px; font: inherit; }
+  .rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .rows button { width: 100%; text-align: left; padding: 10px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; color: var(--ink); font: inherit; cursor: pointer; }
+  .rows small { display: block; color: var(--muted); }
+  .lost { background: #2a1418; border: 1px solid #7a2a32; border-radius: 12px; padding: 10px 12px; font-size: 14px; }
+</style>
+</head>
+<body>
+<main>
+  <div class="top">
+    <img src="../assets/yoke-wordmark.png" alt="Yoke">
+    <button class="link" id="unpair" hidden>Unpair</button>
+  </div>
+
+  <div class="card center" id="step-wait">
+    <div class="spinner" aria-hidden="true"></div>
+    <div class="msg" id="wait-msg">Connecting to your PC…</div>
+    <button class="btn" id="retry" hidden>Try again</button>
+  </div>
+
+  <div class="card center" id="step-start" hidden>
+    <b>Pair your phone</b>
+    <p class="msg">In Yoke on your PC, open <b>Settings → Advanced → Phone remote</b>, click <b>Pair a phone</b> and scan the QR code.</p>
+  </div>
+
+  <form class="card center" id="step-code" hidden>
+    <b>Enter the 6-digit code shown in Yoke on your PC</b>
+    <input class="code-input" id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" aria-label="6-digit code">
+    <div class="msg bad" id="code-err"></div>
+    <button class="btn" type="submit">Pair</button>
+  </form>
+
+  <div id="step-remote" hidden style="display:grid;gap:16px">
+    <div class="lost" id="lost" hidden>Lost the connection to your PC. Reconnecting…</div>
+    <div class="now">
+      <img class="art" id="art" alt="">
+      <div class="title" id="title">Nothing playing</div>
+      <div class="msg" id="artist"></div>
+    </div>
+    <div id="seek-wrap">
+      <input type="range" id="seek" min="0" max="1000" value="0" aria-label="Position">
+      <div class="times"><span id="pos">0:00</span><span id="len">0:00</span></div>
+    </div>
+    <div class="controls">
+      <button class="ctl" id="shuffle" aria-label="Shuffle">⤨</button>
+      <button class="ctl" id="prev" aria-label="Previous">⏮</button>
+      <button class="ctl main" id="toggle" aria-label="Play or pause">▶</button>
+      <button class="ctl" id="next" aria-label="Next">⏭</button>
+      <button class="ctl" id="repeat" aria-label="Repeat">↻</button>
+    </div>
+    <div class="volume">
+      <span aria-hidden="true">🔈</span>
+      <input type="range" id="volume" min="0" max="1" step="0.01" value="0.8" aria-label="Volume on your PC">
+    </div>
+    <div class="tabs">
+      <button data-tab="search" class="on">Search</button>
+      <button data-tab="playlists">Playlists</button>
+      <button data-tab="stations">Radio</button>
+    </div>
+    <input class="search" id="search" type="search" placeholder="Search your library" aria-label="Search your library">
+    <ul class="rows" id="rows"></ul>
+    <div class="msg" id="note"></div>
+  </div>
+</main>
+
+<script src="peerjs-1.5.5.min.js"></script>
+<script>
+  // Protocol must match the "phone remote" section of Yoke's public/app.js.
+  const SAVED = 'yoke-remote';
+  const RETRY_MS = 5000;
+  const COMMAND_TIMEOUT_MS = 10000;
+  const $ = (id) => document.getElementById(id);
+  const STEPS = ['step-wait', 'step-start', 'step-code', 'step-remote'];
+  const show = (id) => STEPS.forEach((s) => ($(s).hidden = s !== id));
+  const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+  const device = /iPhone/.test(navigator.userAgent) ? 'iPhone' : /iPad/.test(navigator.userAgent) ? 'iPad'
+    : /Android/.test(navigator.userAgent) ? 'Android phone' : 'Browser';
+
+  const load = () => { try { return JSON.parse(localStorage.getItem(SAVED)); } catch { return null; } };
+  const save = (v) => { try { localStorage.setItem(SAVED, JSON.stringify(v)); } catch { /* stays for this visit */ } };
+  const forget = () => { try { localStorage.removeItem(SAVED); } catch { /* nothing saved */ } };
+
+  let peer = null, conn = null, ready = false, retry = null, peerId = null;
+  let player = null, received = 0, seeking = false, seq = 0;
+  const waiting = new Map();
+
+  function wait(text, canRetry = false) {
+    show('step-wait');
+    $('wait-msg').textContent = text;
+    $('retry').hidden = !canRetry;
+    document.querySelector('.spinner').hidden = canRetry;
+  }
+
+  function disconnect() {
+    clearTimeout(retry);
+    peer?.destroy();
+    peer = conn = null;
+    ready = false;
+  }
+
+  function connect(first) {
+    disconnect();
+    peer = new Peer({ debug: 0 });
+    const giveUp = setTimeout(failed, 20000);
+    peer.on('error', () => { clearTimeout(giveUp); failed(); });
+    peer.on('open', () => {
+      conn = peer.connect(peerId, { reliable: true });
+      conn.on('open', () => {
+        clearTimeout(giveUp);
+        conn.send(first);
+      });
+      conn.on('data', onMessage);
+      conn.on('close', failed);
+    });
+  }
+
+  function failed() {
+    const wasReady = ready;
+    disconnect();
+    const saved = load();
+    if (saved) {
+      if (wasReady) $('lost').hidden = false;
+      else wait("Can't reach your PC. Make sure it's on, Yoke is open and the phone remote is turned on.", true);
+      retry = setTimeout(reconnect, RETRY_MS);
+    } else {
+      wait("Couldn't connect. Open Pair a phone in Yoke and scan the QR code again.", true);
+    }
+  }
+
+  function reconnect() {
+    const saved = load();
+    if (!saved) return start();
+    peerId = saved.peerId;
+    connect({ type: 'hello', id: saved.id, token: saved.token });
+  }
+
+  function onMessage(msg) {
+    if (msg.type === 'need-code') {
+      show('step-code');
+      $('code').focus();
+    } else if (msg.type === 'wrong-code') {
+      $('code').value = '';
+      $('code-err').textContent = `That code isn't right. ${msg.left} ${msg.left === 1 ? 'try' : 'tries'} left.`;
+    } else if (msg.type === 'paired') {
+      save({ peerId, id: msg.id, token: msg.token });
+    } else if (msg.type === 'denied') {
+      if (msg.reason === 'unpaired') forget();
+      disconnect();
+      if (msg.reason === 'tries') wait('Too many wrong codes. Start pairing again in Yoke.', true);
+      else if (msg.reason === 'unpaired') { $('unpair').hidden = true; show('step-start'); }
+      else wait('That QR code has expired. Click Pair a phone in Yoke and scan the new one.', true);
+    } else if (msg.type === 'state') {
+      if (!ready) {
+        ready = true;
+        show('step-remote');
+        $('unpair').hidden = false;
+        loadTab();
+      }
+      $('lost').hidden = true;
+      player = msg.state;
+      received = Date.now();
+      draw();
+    } else if (msg.type === 'cover') {
+      $('art').src = msg.cover || '../assets/yoke-disc.png';
+    } else if (msg.type === 'reply' && waiting.has(msg.id)) {
+      const { resolve, reject, timer } = waiting.get(msg.id);
+      clearTimeout(timer);
+      waiting.delete(msg.id);
+      if (msg.ok) resolve(msg.result);
+      else reject(new Error(msg.error));
+    }
+  }
+
+  function cmd(name, args = {}) {
+    if (!conn?.open) return Promise.reject(new Error('Not connected to your PC.'));
+    const id = ++seq;
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        waiting.delete(id);
+        reject(new Error('Your PC did not respond.'));
+      }, COMMAND_TIMEOUT_MS);
+      waiting.set(id, { resolve, reject, timer });
+      conn.send({ type: 'cmd', id, name, args });
+    }).catch((err) => {
+      $('note').textContent = err.message;
+      throw err;
+    });
+  }
+  const press = (name, args) => { $('note').textContent = ''; cmd(name, args).catch(() => {}); };
+
+  function position() {
+    if (!player) return 0;
+    return player.position + (player.playing ? (Date.now() - received) / 1000 : 0);
+  }
+
+  function draw() {
+    const t = player?.track;
+    $('title').textContent = t ? t.title : 'Nothing playing';
+    $('artist').textContent = t ? t.artist : '';
+    $('toggle').textContent = player?.playing ? '⏸' : '▶';
+    $('shuffle').classList.toggle('on', Boolean(player?.shuffle));
+    $('repeat').classList.toggle('on', player && player.repeat !== 'off');
+    $('repeat').textContent = player?.repeat === 'one' ? '①' : '↻';
+    if (document.activeElement !== $('volume')) $('volume').value = player?.volume ?? 0.8;
+    tick();
+  }
+
+  function tick() {
+    if (!player || seeking) return;
+    const len = player.duration;
+    $('seek-wrap').hidden = !len; // live radio has no length
+    if (!len) return;
+    const pos = Math.min(position(), len);
+    $('seek').value = (pos / len) * 1000;
+    $('pos').textContent = fmt(pos);
+    $('len').textContent = fmt(len);
+  }
+  setInterval(tick, 1000);
+
+  // ----- lists -----
+  let tab = 'search';
+  function rows(list, label, sub, onPick) {
+    const ul = $('rows');
+    ul.replaceChildren(...list.map((item) => {
+      const li = document.createElement('li');
+      const b = document.createElement('button');
+      b.textContent = label(item);
+      const small = document.createElement('small');
+      small.textContent = sub(item);
+      b.append(small);
+      b.onclick = () => onPick(item);
+      li.append(b);
+      return li;
+    }));
+  }
+  async function loadTab() {
+    $('search').hidden = tab !== 'search';
+    $('rows').replaceChildren();
+    $('note').textContent = '';
+    if (tab === 'search') return runSearch();
+    try {
+      if (tab === 'playlists') {
+        const list = await cmd('playlists');
+        rows(list, (p) => p.name, (p) => `${p.count} song${p.count === 1 ? '' : 's'}`, (p) => press('playPlaylist', { id: p.id }));
+        if (!list.length) $('note').textContent = 'No playlists yet.';
+      } else {
+        const list = await cmd('stations');
+        rows(list, (s) => s.name, (s) => s.tags, (s) => press('playStation', { uuid: s.uuid }));
+        if (!list.length) $('note').textContent = 'Stations you ♥ in Yoke show up here.';
+      }
+    } catch { /* shown in the note */ }
+  }
+  let searchTimer = null;
+  async function runSearch() {
+    const q = $('search').value.trim();
+    if (!q) return $('rows').replaceChildren();
+    try {
+      const list = await cmd('search', { q });
+      rows(list, (t) => t.title, (t) => t.artist, (t) => press('playTracks', { trackIds: [t.id] }));
+      $('note').textContent = list.length ? '' : 'No songs found.';
+    } catch { /* shown in the note */ }
+  }
+  $('search').oninput = () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(runSearch, 300);
+  };
+  document.querySelectorAll('[data-tab]').forEach((b) => (b.onclick = () => {
+    tab = b.dataset.tab;
+    document.querySelectorAll('[data-tab]').forEach((x) => x.classList.toggle('on', x === b));
+    loadTab();
+  }));
+
+  // ----- controls -----
+  $('toggle').onclick = () => press('toggle');
+  $('next').onclick = () => press('next');
+  $('prev').onclick = () => press('previous');
+  $('shuffle').onclick = () => press('shuffle');
+  $('repeat').onclick = () => press('repeat');
+  $('seek').oninput = () => { seeking = true; };
+  $('seek').onchange = () => {
+    seeking = false;
+    if (player?.duration) press('seek', { position: ($('seek').value / 1000) * player.duration });
+  };
+  let volumeTimer = null;
+  $('volume').oninput = () => {
+    clearTimeout(volumeTimer);
+    volumeTimer = setTimeout(() => press('volume', { volume: Number($('volume').value) }), 120);
+  };
+  $('code').oninput = () => {
+    $('code').value = $('code').value.replace(/\D/g, '').slice(0, 6);
+    if ($('code').value.length === 6) $('step-code').requestSubmit();
+  };
+  $('step-code').onsubmit = (e) => {
+    e.preventDefault();
+    $('code-err').textContent = '';
+    if ($('code').value.length === 6 && conn?.open) conn.send({ type: 'code', code: $('code').value, device });
+  };
+  $('retry').onclick = start;
+  $('unpair').onclick = () => {
+    if (!confirm('Unpair this phone? You can pair it again from Yoke.')) return;
+    forget();
+    disconnect();
+    $('unpair').hidden = true;
+    show('step-start');
+  };
+
+  // ----- start -----
+  function start() {
+    clearTimeout(retry);
+    // From the QR code: "#<pc id>.<one-time secret>". Dropped from the address straight away.
+    const scan = location.hash.match(/^#(yokebeat-remote-[0-9a-f]{32})\.([0-9a-f]{32})$/);
+    if (scan) {
+      history.replaceState(null, '', location.pathname);
+      peerId = scan[1];
+      wait('Connecting to your PC…');
+      return connect({ type: 'pair', secret: scan[2] });
+    }
+    if (load()) {
+      wait('Connecting to your PC…');
+      return reconnect();
+    }
+    show('step-start');
+  }
+  start();
+</script>
+</body>
+</html>
