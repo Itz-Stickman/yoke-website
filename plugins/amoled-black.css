@@ -1,0 +1,14 @@
+/* ==YokePlugin==
+   @name        AMOLED Black
+   @version     1.0
+   @author      Yoke
+   @description Turns the dark theme pure black, which looks great on OLED screens. Light mode isn't changed.
+   ==/YokePlugin== */
+
+:root:not([data-theme="light"]) {
+  --bg: #000;
+  --panel: #0b0b0d;
+  --panel-2: #141417;
+  --hover: #1d1d21;
+  --border: #232327;
+}

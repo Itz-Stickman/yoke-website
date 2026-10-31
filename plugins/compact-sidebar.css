@@ -1,0 +1,11 @@
+/* ==YokePlugin==
+   @name        Compact Sidebar
+   @version     1.0
+   @author      Yoke
+   @description Tightens the sidebar so more of your playlists fit without scrolling.
+   ==/YokePlugin== */
+
+.nav-btn, .pl-btn { padding-top: 5px !important; padding-bottom: 5px !important; font-size: 13.5px; }
+.pl-nav-disc { width: 24px !important; height: 24px !important; }
+.sidebar .section-title { margin-top: 8px; margin-bottom: 2px; }
+.sidebar .brand { padding-bottom: 8px; }

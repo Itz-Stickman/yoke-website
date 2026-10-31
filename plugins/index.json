@@ -1,15 +1,48 @@
 {
   "plugins": [
     {
-      "id": "hello-yoke",
-      "file": "hello-yoke.js",
-      "name": "Hello Yoke",
+      "id": "amoled-black",
+      "file": "amoled-black.css",
+      "name": "AMOLED Black",
       "version": "1.0",
       "author": "Yoke",
-      "description": "Says hello, announces each new song, and shows a play counter in the corner. A good one to read if you want to make your own.",
+      "description": "Turns the dark theme pure black, which looks great on OLED screens. Light mode isn't changed.",
+      "type": "style",
+      "size": 354,
+      "sha256": "8110ecf8f7b591f5d65fa5af80058cc95931753f79127a7b20c8e863bfe0ee77"
+    },
+    {
+      "id": "compact-sidebar",
+      "file": "compact-sidebar.css",
+      "name": "Compact Sidebar",
+      "version": "1.0",
+      "author": "Yoke",
+      "description": "Tightens the sidebar so more of your playlists fit without scrolling.",
+      "type": "style",
+      "size": 474,
+      "sha256": "bf5c5d56c260efee29223188c78b7a896b20ab436049810d3c21a35b8e8c9ebb"
+    },
+    {
+      "id": "intro-scan",
+      "file": "intro-scan.js",
+      "name": "Intro Scan",
+      "version": "1.0",
+      "author": "Yoke",
+      "description": "Like the button on an old CD player: press I to hear the first 15 seconds of each song in the queue.",
       "type": "script",
-      "size": 1387,
-      "sha256": "444af6df9cbf9561062b0998f35ffae139858f8f2b29f81ad5661ae9c0698ee2"
+      "size": 938,
+      "sha256": "c2a12cfe3bf4da4e16194637f469d8d64cec2c87ccd11987778444993c01677c"
+    },
+    {
+      "id": "listening-time",
+      "file": "listening-time.js",
+      "name": "Listening Time",
+      "version": "1.0",
+      "author": "Yoke",
+      "description": "Shows how long you've listened today and this week, under your song count in the sidebar.",
+      "type": "script",
+      "size": 1628,
+      "sha256": "467d1d45e429222de654c77c08adc00d13f7c04be6c246d70ddc0314454dc218"
     },
     {
       "id": "sleep-timer",
