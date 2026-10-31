@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Plugins · Yoke</title>
+<meta name="description" content="Free plugins for Yoke, the ad-free music player for the files you own.">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png">
+<link rel="apple-touch-icon" href="assets/favicon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700;800&family=Figtree:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+<meta property="og:title" content="Yoke plugins">
+<meta property="og:description" content="Free plugins for Yoke.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://yokebeat.com/plugins.html">
+<meta property="og:image" content="https://yokebeat.com/assets/yoke-monitor.png">
+<meta property="og:image:alt" content="Yoke running on a desktop monitor">
+<meta name="theme-color" content="#0A0B10">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@YokeBeats">
+</head>
+<body>
+
+<header class="wrap nav">
+  <a class="logo" href="./" aria-label="Yoke home"><img src="assets/yoke-wordmark.png" alt="Yoke" width="84" height="38"></a>
+  <nav class="nav-links" aria-label="Main">
+    <a href="./#inside">Features</a>
+    <a href="./#discord">Discord</a>
+    <a href="whats-new.html">What's new</a>
+    <a href="plugins.html" aria-current="page">Plugins</a>
+    <a href="api.html">API</a>
+    <a class="btn" href="./#download">Download</a>
+  </nav>
+</header>
+
+<main class="changes">
+  <div class="wrap">
+    <div class="page-head">
+      <span class="label">Plugin store</span>
+      <h1>Add more to <span class="grad">Yoke</span></h1>
+      <p>Free plugins, approved by Yoke. Install them from <b>Settings → Plugins</b> in the app, or download the file here and import it.</p>
+    </div>
+
+    <div class="store-list" id="store" aria-live="polite"><p class="store-note">Loading plugins…</p></div>
+
+    <div class="card store-submit">
+      <h3>Made a plugin?</h3>
+      <p>Send it to <a href="mailto:yoke@yokebeat.com">yoke@yokebeat.com</a>. Every plugin is read by hand before it's listed.</p>
+      <p class="store-note">Plugins run inside Yoke, so Yoke still shows you each plugin's code before it's added, and it starts switched off.</p>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <img src="assets/yoke-wordmark.png" alt="Yoke" width="62" height="28">
+    <span>© 2026 Yoke · No ads. No account. Just your music.</span>
+    <nav class="social" aria-label="Yoke on social media">
+      <a href="https://x.com/YokeBeats" target="_blank" rel="noopener me"><span>@YokeBeats</span></a>
+      <a href="https://www.instagram.com/yokebeat/" target="_blank" rel="noopener me"><span>@yokebeat</span></a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+(async () => {
+  const box = document.getElementById('store');
+  const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+  try {
+    const res = await fetch('plugins/index.json', { cache: 'no-cache' });
+    if (!res.ok) throw new Error(res.status);
+    const { plugins } = await res.json();
+    box.replaceChildren(...plugins.map((p) => {
+      const card = el('article', 'card store-item');
+      const head = el('div', 'store-head');
+      head.append(el('h3', null, p.name), el('span', 'badge', p.type === 'style' ? 'Style' : 'Script'));
+      card.append(head, el('p', null, p.description), el('p', 'store-note', `Version ${p.version} · by ${p.author}`));
+      const link = el('a', 'changelog', 'Download →');
+      link.href = `plugins/${p.file}`;
+      link.download = p.file;
+      card.append(link);
+      return card;
+    }));
+    if (!plugins.length) box.replaceChildren(el('p', 'store-note', 'No plugins yet. Check back soon.'));
+  } catch {
+    box.replaceChildren(el('p', 'store-note', "Couldn't load the plugin list. Try refreshing the page."));
+  }
+})();
+</script>
+</body>
+</html>

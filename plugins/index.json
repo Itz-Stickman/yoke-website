@@ -1,0 +1,26 @@
+{
+  "plugins": [
+    {
+      "id": "hello-yoke",
+      "file": "hello-yoke.js",
+      "name": "Hello Yoke",
+      "version": "1.0",
+      "author": "Yoke",
+      "description": "Says hello, announces each new song, and shows a play counter in the corner. A good one to read if you want to make your own.",
+      "type": "script",
+      "size": 1387,
+      "sha256": "444af6df9cbf9561062b0998f35ffae139858f8f2b29f81ad5661ae9c0698ee2"
+    },
+    {
+      "id": "sleep-timer",
+      "file": "sleep-timer.js",
+      "name": "Sleep Timer",
+      "version": "1.0",
+      "author": "Yoke",
+      "description": "Adds a moon button that stops the music after 15, 30, 60 or 90 minutes, fading out gently.",
+      "type": "script",
+      "size": 2080,
+      "sha256": "42e3adf91912f4750aa721a44a80726bb9cd3a7567c6363e16f1c1579c52ffb7"
+    }
+  ]
+}

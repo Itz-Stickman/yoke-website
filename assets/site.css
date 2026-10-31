@@ -322,6 +322,15 @@ footer img { height: 28px; width: auto; }
 .api-art .s { color: #F0A21E; }
 .card.small .changelog { margin-top: auto; }
 
+/* Plugin store */
+.store-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; padding-bottom: 28px; }
+.store-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.store-note { color: var(--muted); font-size: 14px; }
+.card p.store-note { font-size: 13.5px; }
+.store-item .changelog { margin-top: auto; }
+.store-submit { margin-bottom: 110px; }
+.store-submit a { color: var(--blue-hi); }
+
 /* API docs */
 .docs-req { font-family: var(--font-mono); font-size: 13px !important; color: var(--egg) !important; }
 .docs-layout { display: grid; grid-template-columns: 200px minmax(0, 860px); gap: 48px; padding-bottom: 110px; align-items: start; }
