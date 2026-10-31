@@ -121,9 +121,10 @@
   </div>
 </main>
 
-<script src="peerjs-1.5.5.min.js"></script>
 <script>
   // Protocol must match the "phone remote" section of Yoke's public/app.js.
+  const RELAY = 'wss://yoke-relay.yoke-relay.workers.dev';
+  const PING_MS = 30000;
   const SAVED = 'yoke-remote';
   const RETRY_MS = 5000;
   const COMMAND_TIMEOUT_MS = 10000;
@@ -158,7 +159,7 @@
   const save = (v) => { try { localStorage.setItem(SAVED, JSON.stringify(v)); } catch { /* stays for this visit */ } };
   const forget = () => { try { localStorage.removeItem(SAVED); } catch { /* nothing saved */ } };
 
-  let peer = null, conn = null, ready = false, retry = null, peerId = null;
+  let conn = null, ready = false, retry = null, peerId = null;
   let player = null, received = 0, seeking = false, seq = 0;
   const waiting = new Map();
 
@@ -171,33 +172,36 @@
 
   function disconnect() {
     clearTimeout(retry);
-    const old = peer;
-    peer = conn = null;
+    const old = conn;
+    conn = null;
     ready = false;
-    old?.destroy();
+    old?.shut();
   }
 
   function connect(first, onFail = failed) {
     disconnect();
-    const mine = new Peer({ debug: 0 });
-    peer = mine;
+    const ws = new WebSocket(`${RELAY}/join/${peerId}`);
+    let ping;
+    const mine = {
+      get open() { return ws.readyState === WebSocket.OPEN; },
+      send: (msg) => ws.send(JSON.stringify(msg)),
+      shut: () => { clearInterval(ping); ws.close(); },
+    };
+    conn = mine;
     // Events from a connection we've already replaced are ignored.
     const fail = () => {
       clearTimeout(giveUp);
-      if (peer === mine) onFail();
+      clearInterval(ping);
+      if (conn === mine) onFail();
     };
     const giveUp = setTimeout(fail, 20000);
-    mine.on('error', fail);
-    mine.on('open', () => {
-      const c = mine.connect(peerId, { reliable: true });
-      conn = c;
-      c.on('open', () => {
-        clearTimeout(giveUp);
-        c.send(first);
-      });
-      c.on('data', onMessage);
-      c.on('close', fail);
-    });
+    ws.onopen = () => {
+      clearTimeout(giveUp);
+      mine.send(first);
+      ping = setInterval(() => ws.send('ping'), PING_MS);
+    };
+    ws.onmessage = (e) => { if (e.data !== 'pong') onMessage(JSON.parse(e.data)); };
+    ws.onclose = fail;
   }
 
   // Pairing with only the code: it's what a home-screen app needs, since a QR code can't open it.
