@@ -57,6 +57,10 @@
   .rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
   .rows button { width: 100%; text-align: left; padding: 10px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; color: var(--ink); font: inherit; cursor: pointer; }
   .rows small { display: block; color: var(--muted); }
+  .listen { display: flex; align-items: center; justify-content: center; gap: 9px; width: 100%; padding: 12px 0; border: 1px solid var(--line); border-radius: 999px; background: none; color: var(--ink); font: 600 15px var(--font-body); cursor: pointer; }
+  .listen svg { width: 20px; height: 20px; display: block; }
+  .listen.on { background: rgba(31, 91, 255, .18); border-color: var(--blue-hi); color: var(--blue-hi); }
+  .listen-note { color: var(--muted); font-size: 13px; text-align: center; margin-top: -8px; min-height: 1.2em; }
   .lost { background: #2a1418; border: 1px solid #7a2a32; border-radius: 12px; padding: 10px 12px; font-size: 14px; }
 </style>
 </head>
@@ -110,6 +114,8 @@
       <img class="vol-icon" id="vol-icon" src="icons/volume-medium.png" alt="">
       <input type="range" id="volume" min="0" max="1" step="0.01" value="0.8" aria-label="Volume on your PC">
     </div>
+    <button class="listen" id="listen" aria-pressed="false"></button>
+    <div class="listen-note" id="listen-note"></div>
     <div class="tabs">
       <button data-tab="search" class="on"></button>
       <button data-tab="playlists"></button>
@@ -141,6 +147,7 @@
     pause: svg('<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>', 'currentColor'),
     search: svg('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>'),
     playlists: svg('<path d="M3 6h13"/><path d="M3 12h9"/><path d="M3 18h6"/><path d="M16 18V9l5-1.5"/><circle cx="14" cy="18" r="2"/>'),
+    headphones: svg('<path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>'),
     stations: svg('<circle cx="12" cy="12" r="2"/><path d="M16.2 7.8a6 6 0 0 1 0 8.4"/><path d="M7.8 16.2a6 6 0 0 1 0-8.4"/><path d="M19 5a10 10 0 0 1 0 14"/><path d="M5 19A10 10 0 0 1 5 5"/>'),
   };
   for (const id of ['shuffle', 'prev', 'next', 'repeat']) $(id).innerHTML = ICONS[id];
@@ -220,6 +227,7 @@
   function failed() {
     const wasReady = ready;
     disconnect();
+    ear.pause(); // the PC pauses too when it loses a phone that was playing
     const saved = load();
     if (saved) {
       if (wasReady) $('lost').hidden = false;
@@ -260,11 +268,14 @@
         show('step-remote');
         $('unpair').hidden = false;
         loadTab();
+        // Reconnected while playing on this phone: carry on.
+        if (wantListen && !msg.state.listening) cmd('listen', { on: true }).catch(() => {});
       }
       $('lost').hidden = true;
       player = msg.state;
       received = Date.now();
       draw();
+      sync();
     } else if (msg.type === 'cover') {
       $('art').src = msg.cover || '../assets/yoke-disc.png';
     } else if (msg.type === 'reply' && waiting.has(msg.id)) {
@@ -276,18 +287,18 @@
     }
   }
 
-  function cmd(name, args = {}) {
+  function cmd(name, args = {}, { timeout = COMMAND_TIMEOUT_MS, quiet = false } = {}) {
     if (!conn?.open) return Promise.reject(new Error('Not connected to your PC.'));
     const id = ++seq;
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         waiting.delete(id);
         reject(new Error('Your PC did not respond.'));
-      }, COMMAND_TIMEOUT_MS);
+      }, timeout);
       waiting.set(id, { resolve, reject, timer });
       conn.send({ type: 'cmd', id, name, args });
     }).catch((err) => {
-      $('note').textContent = err.message;
+      if (!quiet) $('note').textContent = err.message;
       throw err;
     });
   }
@@ -306,8 +317,20 @@
     $('shuffle').classList.toggle('on', Boolean(player?.shuffle));
     $('repeat').classList.toggle('on', player && player.repeat !== 'off');
     $('repeat').innerHTML = player?.repeat === 'one' ? ICONS.repeatOne : ICONS.repeat;
-    $('vol-icon').src = `icons/volume-${volumeIcon(player?.volume ?? 0.8, player?.muted)}.png`;
-    if (document.activeElement !== $('volume')) $('volume').value = player?.volume ?? 0.8;
+    const here = Boolean(player?.listening);
+    const level = here ? ear.volume : player?.volume ?? 0.8;
+    $('vol-icon').src = `icons/volume-${volumeIcon(level, !here && player?.muted)}.png`;
+    $('volume').setAttribute('aria-label', here ? 'Volume on this phone' : 'Volume on your PC');
+    if (document.activeElement !== $('volume')) $('volume').value = level;
+    $('listen').classList.toggle('on', here);
+    $('listen').setAttribute('aria-pressed', String(here));
+    $('listen').innerHTML = `${ICONS.headphones}<span>${here ? 'Playing on this phone' : 'Play on this phone'}</span>`;
+    if (here && !player.phoneOk && t) listenNote('This one plays on your PC (radio, CDs and copy-protected songs stay there).');
+    else if (!here) listenNote('');
+    if ('mediaSession' in navigator && here && t) {
+      navigator.mediaSession.metadata = new MediaMetadata({ title: t.title, artist: t.artist, album: t.album || '', artwork: $('art').src.startsWith('data:') ? [{ src: $('art').src, sizes: '320x320', type: 'image/jpeg' }] : [] });
+      navigator.mediaSession.playbackState = player.playing ? 'playing' : 'paused';
+    }
     tick();
   }
 
@@ -377,7 +400,10 @@
   }));
 
   // ----- controls -----
-  $('toggle').onclick = () => press('toggle');
+  $('toggle').onclick = () => {
+    if (player?.listening && player.playing && ear.paused && loadedId) { listenNote(''); return ear.play().catch(() => {}); }
+    press('toggle');
+  };
   $('next').onclick = () => press('next');
   $('prev').onclick = () => press('previous');
   $('shuffle').onclick = () => press('shuffle');
@@ -389,9 +415,130 @@
   };
   let volumeTimer = null;
   $('volume').oninput = () => {
+    if (player?.listening) {
+      ear.volume = Number($('volume').value); // phones may leave this to their volume buttons
+      try { localStorage.setItem('yoke-remote-volume', String(ear.volume)); } catch { /* not saved */ }
+      return draw();
+    }
     clearTimeout(volumeTimer);
     volumeTimer = setTimeout(() => press('volume', { volume: Number($('volume').value) }), 120);
   };
+
+  // ----- playing on this phone -----
+  // Yoke on the PC keeps running silently as the clock; this phone plays the same song in step.
+  // Songs come from the PC in pieces through the relay (see "playing on the phone" in Yoke).
+  const ear = new Audio();
+  ear.preload = 'auto';
+  try { ear.volume = Number(localStorage.getItem('yoke-remote-volume') ?? 1); } catch { /* full volume */ }
+  const SILENCE = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
+  const songs = new Map(); // track id -> Promise<object URL>, the last few
+  let wantListen = false, loadedId = null, loadingId = null;
+  const listenNote = (text) => { $('listen-note').textContent = text; };
+
+  function decode(base64) {
+    const text = atob(base64);
+    const bytes = new Uint8Array(text.length);
+    for (let i = 0; i < text.length; i++) bytes[i] = text.charCodeAt(i);
+    return bytes;
+  }
+
+  // Fetches a song in pieces, three at a time. onProgress gets 0..1.
+  function fetchSong(id, onProgress = () => {}) {
+    if (!songs.has(id)) {
+      const job = (async () => {
+        const first = await cmd('audio', { id, part: 0 }, { timeout: 120000, quiet: true }); // may be converting first
+        const pieces = new Array(first.parts);
+        pieces[0] = decode(first.data);
+        let done = 1, nextPart = 1;
+        onProgress(done / first.parts);
+        const worker = async () => {
+          while (nextPart < first.parts) {
+            const part = nextPart++;
+            pieces[part] = decode((await cmd('audio', { id, part }, { timeout: 30000, quiet: true })).data);
+            onProgress(++done / first.parts);
+          }
+        };
+        await Promise.all([worker(), worker(), worker()]);
+        return URL.createObjectURL(new Blob(pieces, { type: first.type }));
+      })();
+      job.catch(() => songs.delete(id));
+      songs.set(id, job);
+      // Keep the current and next songs; let older ones go.
+      while (songs.size > 3) {
+        const [oldId, old] = songs.entries().next().value;
+        songs.delete(oldId);
+        old.then((url) => { if (oldId !== loadedId) URL.revokeObjectURL(url); }, () => {});
+      }
+    }
+    return songs.get(id);
+  }
+
+  async function loadSong(id) {
+    if (loadingId === id) return;
+    loadingId = id;
+    listenNote('Getting the song ready…');
+    try {
+      const url = await fetchSong(id, (p) => { if (loadingId === id) listenNote(`Getting the song ready… ${Math.round(p * 100)}%`); });
+      if (player?.track?.id !== id || !player.listening) return;
+      ear.src = url;
+      loadedId = id;
+      listenNote('');
+      await cmd('listenReady', { id }, { quiet: true }).catch(() => {});
+      sync();
+      // Next song in the background, so the change is quick.
+      if (player?.nextId) fetchSong(player.nextId).catch(() => {});
+    } catch (err) {
+      listenNote(err.message || "Couldn't get the song from your PC.");
+    } finally {
+      if (loadingId === id) loadingId = null;
+    }
+  }
+
+  // Follows the PC: same song, playing or paused, and within 1.5 s of its position.
+  function sync() {
+    if (!player?.listening || !player.phoneOk || !player.track) {
+      if (!ear.paused) ear.pause();
+      return;
+    }
+    const id = player.track.id;
+    if (loadedId !== id) {
+      if (!ear.paused) ear.pause();
+      return loadSong(id);
+    }
+    if (player.playing) {
+      const want = position();
+      if (ear.paused) {
+        ear.currentTime = want;
+        ear.play().catch(() => listenNote('Tap ▶ to start the sound on this phone.'));
+      } else if (Math.abs(ear.currentTime - want) > 1.5) {
+        ear.currentTime = want;
+      }
+    } else if (!ear.paused) {
+      ear.pause();
+    }
+  }
+  setInterval(sync, 2000);
+
+  $('listen').onclick = async () => {
+    if (player?.listening) {
+      wantListen = false;
+      ear.pause();
+      return press('listen', { on: false });
+    }
+    // Phones only allow sound that starts from a tap, so start it now (silently).
+    ear.src = SILENCE;
+    ear.play().catch(() => {});
+    loadedId = null;
+    wantListen = true;
+    press('listen', { on: true });
+  };
+  if ('mediaSession' in navigator) {
+    // Lock-screen and headphone buttons.
+    navigator.mediaSession.setActionHandler('play', () => press('play'));
+    navigator.mediaSession.setActionHandler('pause', () => press('pause'));
+    navigator.mediaSession.setActionHandler('nexttrack', () => press('next'));
+    navigator.mediaSession.setActionHandler('previoustrack', () => press('previous'));
+  }
   $('code').oninput = () => {
     $('code').value = $('code').value.replace(/\D/g, '').slice(0, 6);
     if ($('code').value.length === 6) $('step-code').requestSubmit();
