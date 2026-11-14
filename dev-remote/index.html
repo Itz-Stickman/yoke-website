@@ -326,7 +326,7 @@
     $('listen').setAttribute('aria-pressed', String(here));
     $('listen').innerHTML = `${ICONS.headphones}<span>${here ? 'Playing on this phone' : 'Play on this phone'}</span>`;
     if (here && !player.phoneOk && t) listenNote('This one plays on your PC (radio, CDs and copy-protected songs stay there).');
-    else if (!here) listenNote('');
+    else if (!here || (/plays on your PC/.test($('listen-note').textContent))) listenNote('');
     if ('mediaSession' in navigator && here && t) {
       navigator.mediaSession.metadata = new MediaMetadata({ title: t.title, artist: t.artist, album: t.album || '', artwork: $('art').src.startsWith('data:') ? [{ src: $('art').src, sizes: '320x320', type: 'image/jpeg' }] : [] });
       navigator.mediaSession.playbackState = player.playing ? 'playing' : 'paused';
@@ -431,8 +431,13 @@
   ear.preload = 'auto';
   try { ear.volume = Number(localStorage.getItem('yoke-remote-volume') ?? 1); } catch { /* full volume */ }
   const SILENCE = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
-  const songs = new Map(); // track id -> Promise<object URL>, the last few
-  let wantListen = false, loadedId = null, loadingId = null;
+  // Songs being fetched or fetched, by track id (the last few). A long MP3 can start once its first
+  // part is here: it plays from what has arrived, and switches to the whole file a little before
+  // that part runs out (download is far faster than playback).
+  const songs = new Map();
+  const START_BYTES = 1.5 * 1024 * 1024;
+  const SWAP_BEFORE_END = 30; // seconds
+  let wantListen = false, loadedId = null, loadingId = null, loadedSong = null, loadedUrl = null, loadedParts = 0, loadedBytes = 0, swapping = false;
   const listenNote = (text) => { $('listen-note').textContent = text; };
 
   function decode(base64) {
@@ -442,56 +447,122 @@
     return bytes;
   }
 
-  // Fetches a song in pieces, three at a time. onProgress gets 0..1.
-  function fetchSong(id, onProgress = () => {}) {
-    if (!songs.has(id)) {
-      const job = (async () => {
-        const first = await cmd('audio', { id, part: 0 }, { timeout: 120000, quiet: true }); // may be converting first
-        const pieces = new Array(first.parts);
-        pieces[0] = decode(first.data);
-        let done = 1, nextPart = 1;
-        onProgress(done / first.parts);
-        const worker = async () => {
-          while (nextPart < first.parts) {
-            const part = nextPart++;
-            pieces[part] = decode((await cmd('audio', { id, part }, { timeout: 30000, quiet: true })).data);
-            onProgress(++done / first.parts);
-          }
-        };
-        await Promise.all([worker(), worker(), worker()]);
-        return URL.createObjectURL(new Blob(pieces, { type: first.type }));
-      })();
-      job.catch(() => songs.delete(id));
-      songs.set(id, job);
-      // Keep the current and next songs; let older ones go.
-      while (songs.size > 3) {
-        const [oldId, old] = songs.entries().next().value;
-        songs.delete(oldId);
-        old.then((url) => { if (oldId !== loadedId) URL.revokeObjectURL(url); }, () => {});
-      }
+  // Starts fetching a song in pieces, three at a time.
+  function getSong(id) {
+    if (songs.has(id)) return songs.get(id);
+    const song = { id, type: '', size: 0, pieces: [], loaded: 0, contiguous: 0, fullUrl: null, failed: null, listeners: new Set() };
+    const changed = () => song.listeners.forEach((fn) => fn());
+    song.whole = (async () => {
+      const first = await cmd('audio', { id, part: 0 }, { timeout: 120000, quiet: true }); // may be converting first
+      Object.assign(song, { type: first.type, size: first.size, pieces: new Array(first.parts), parts: first.parts });
+      song.pieces[0] = decode(first.data);
+      song.loaded = 1;
+      let nextPart = 1;
+      const advance = () => { while (song.contiguous < song.parts && song.pieces[song.contiguous]) song.contiguous++; changed(); };
+      advance();
+      const worker = async () => {
+        while (nextPart < song.parts) {
+          const part = nextPart++;
+          song.pieces[part] = decode((await cmd('audio', { id, part }, { timeout: 30000, quiet: true })).data);
+          song.loaded++;
+          advance();
+        }
+      };
+      await Promise.all([worker(), worker(), worker()]);
+      song.fullUrl = URL.createObjectURL(new Blob(song.pieces, { type: song.type }));
+      song.pieces = []; // the blob has them now
+      changed();
+      return song.fullUrl;
+    })();
+    song.whole.catch((err) => { song.failed = err; songs.delete(id); changed(); });
+    songs.set(id, song);
+    // Keep the current and next songs; let older ones go.
+    while (songs.size > 3) {
+      const [oldId, old] = songs.entries().next().value;
+      songs.delete(oldId);
+      if (old.fullUrl && oldId !== loadedId) URL.revokeObjectURL(old.fullUrl);
     }
-    return songs.get(id);
+    return song;
   }
 
-  async function loadSong(id) {
+  // A big MP3 (over 12 MB: the PC couldn't make it smaller) can play from just its start; anything
+  // else waits for the whole file, which takes a few seconds.
+  const canStartEarly = (song) => song.type === 'audio/mpeg' && song.size > 12 * 1024 * 1024;
+  const contiguousBytes = (song) => song.pieces.slice(0, song.contiguous).reduce((n, p) => n + p.length, 0);
+  // What can be played right now: the whole file, or the start of an MP3.
+  function playableUrl(song) {
+    if (song.fullUrl) return song.fullUrl;
+    if (canStartEarly(song) && contiguousBytes(song) >= START_BYTES) return URL.createObjectURL(new Blob(song.pieces.slice(0, song.contiguous), { type: song.type }));
+    return null;
+  }
+
+  function setEar(song, url) {
+    if (loadedUrl && loadedUrl !== url && loadedUrl !== loadedSong?.fullUrl) URL.revokeObjectURL(loadedUrl);
+    loadedSong = song;
+    loadedUrl = url;
+    loadedParts = url === song.fullUrl ? song.parts : song.contiguous;
+    loadedBytes = url === song.fullUrl ? song.size : contiguousBytes(song);
+    ear.src = url;
+  }
+
+  // Waits until the song can start, then tells the PC (which waits for the phone at each new song).
+  function loadSong(id) {
     if (loadingId === id) return;
     loadingId = id;
-    listenNote('Getting the song ready…');
-    try {
-      const url = await fetchSong(id, (p) => { if (loadingId === id) listenNote(`Getting the song ready… ${Math.round(p * 100)}%`); });
+    const song = getSong(id);
+    const step = () => {
+      if (loadingId !== id) return song.listeners.delete(step);
+      if (song.failed) {
+        song.listeners.delete(step);
+        loadingId = null;
+        return listenNote(song.failed.message || "Couldn't get the song from your PC.");
+      }
+      const url = playableUrl(song);
+      if (!url) {
+        const got = song.parts ? song.loaded / song.parts : 0;
+        const need = canStartEarly(song) ? Math.min(1, contiguousBytes(song) / START_BYTES) : got;
+        return listenNote(`Getting the song ready… ${Math.round(need * 100)}%`);
+      }
+      song.listeners.delete(step);
+      loadingId = null;
       if (player?.track?.id !== id || !player.listening) return;
-      ear.src = url;
+      setEar(song, url);
       loadedId = id;
       listenNote('');
-      await cmd('listenReady', { id }, { quiet: true }).catch(() => {});
+      cmd('listenReady', { id }, { quiet: true }).catch(() => {});
       sync();
-      // Next song in the background, so the change is quick.
-      if (player?.nextId) fetchSong(player.nextId).catch(() => {});
-    } catch (err) {
-      listenNote(err.message || "Couldn't get the song from your PC.");
-    } finally {
-      if (loadingId === id) loadingId = null;
-    }
+      // Next song in the background, once this one is all here, so the change is quick.
+      song.whole.then(() => { if (player?.nextId) getSong(player.nextId); }, () => {});
+    };
+    song.listeners.add(step);
+    step();
+  }
+
+  // Seconds of the song in what's loaded. A partial MP3 claims the whole song's length, so go by bytes.
+  function haveSeconds() {
+    if (!loadedSong || loadedUrl === loadedSong.fullUrl) return Infinity;
+    const length = player?.duration || (Number.isFinite(ear.duration) ? ear.duration : 0);
+    return length * (loadedBytes / (loadedSong.size || 1));
+  }
+
+  // Playing the start of a long MP3: move to more of it shortly before it runs out (or now, after
+  // a seek past it).
+  function topUp(force = false) {
+    const song = loadedSong;
+    if (!song || swapping || loadedUrl === song.fullUrl) return;
+    const left = haveSeconds() - ear.currentTime;
+    if (!force && left > SWAP_BEFORE_END) return;
+    if (!song.fullUrl && song.contiguous <= loadedParts) return; // nothing new has arrived
+    const url = song.fullUrl || playableUrl(song);
+    if (!url) return;
+    swapping = true;
+    const at = ear.currentTime;
+    setEar(song, url);
+    ear.addEventListener('loadedmetadata', () => {
+      ear.currentTime = at;
+      swapping = false;
+      sync();
+    }, { once: true });
   }
 
   // Follows the PC: same song, playing or paused, and within 1.5 s of its position.
@@ -505,19 +576,34 @@
       if (!ear.paused) ear.pause();
       return loadSong(id);
     }
+    // Already have it (back to the same song): let the PC know straight away.
+    if (player.waiting) cmd('listenReady', { id }, { quiet: true }).catch(() => {});
+    if (swapping) return;
     if (player.playing) {
       const want = position();
+      if (want > haveSeconds() - 1) {
+        // Ahead of what has arrived (a jump forward): wait until that part is here.
+        if (!ear.paused) ear.pause();
+        const song = loadedSong;
+        const arrived = song.fullUrl ? Infinity : (player.duration || 0) * (contiguousBytes(song) / (song.size || 1));
+        listenNote(`Getting that part of the song… ${Math.round(Math.min(1, arrived / want) * 100)}%`);
+        if (arrived > want + 5) topUp(true);
+        return;
+      }
+      if (/^Getting/.test($('listen-note').textContent)) listenNote('');
       if (ear.paused) {
         ear.currentTime = want;
         ear.play().catch(() => listenNote('Tap ▶ to start the sound on this phone.'));
       } else if (Math.abs(ear.currentTime - want) > 1.5) {
         ear.currentTime = want;
       }
+      topUp();
     } else if (!ear.paused) {
       ear.pause();
     }
   }
   setInterval(sync, 2000);
+  ear.addEventListener('timeupdate', topUp);
 
   $('listen').onclick = async () => {
     if (player?.listening) {
