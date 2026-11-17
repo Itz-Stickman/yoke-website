@@ -5,13 +5,45 @@
   var DOWNLOAD_BASE = 'https://github.com/' + REPO + '/releases/download/';
   var CACHE_KEY = 'yoke-releases-v2';
 
-  var FALLBACK = [['1.5.1', '2026-10-30'], ['1.4.6', '2026-10-28'], ['1.4.5', '2026-10-28'], ['1.4.0', '2026-10-28'], ['1.3.1', '2026-10-28'], ['1.3.0', '2026-10-28']].map(function (v) {
+  var FALLBACK = [['1.6.0', '2026-11-16'], ['1.5.1', '2026-10-30'], ['1.4.6', '2026-10-28'], ['1.4.5', '2026-10-28'], ['1.4.0', '2026-10-28'], ['1.3.1', '2026-10-28'], ['1.3.0', '2026-10-28']].map(function (v) {
     return { version: v[0], date: v[1], setup: 'Yoke-Setup-' + v[0] + '.exe', portable: 'Yoke-' + v[0] + '-portable.exe' };
   });
 
   // Notes written for the site, in the same Markdown as GitHub releases.
   // If a GitHub release has its own notes, those win.
   var NOTES = {
+    '1.6.0': [
+      '## ✨ New',
+      '- **Radio.** A new **Radio** page with live internet stations: search by name, country or genre, and ♥ your favorites.',
+      '  - **Song radio** plays an endless mix from your own library. Start one from the Radio page, or right-click a song → **Start song radio**.',
+      '- **Automix.** Songs flow into each other instead of stopping.',
+      '  - **DJ mix** matches the tempo and beats of the two songs and blends them like a DJ.',
+      '  - **Crossfade** simply fades one into the next, over as long as you like.',
+      '- **Equalizer.** Ten bands with presets like **Bass boost**, **Vocal**, **Rock**, **Electronic** and **Late night**, in **Settings → Equalizer**.',
+      '- **Smart playlists.** Playlists that fill themselves from rules you set, like an artist, a genre, how often you play a song or when you added it.',
+      '- **Phone remote.** Control Yoke from your phone, from anywhere. Pair it in **Settings → Advanced → Phone remote**.',
+      '  - Tap **Play on this phone** to hear the music on your phone instead. Your PC goes quiet and keeps the queue.',
+      '- **Calendar.** Mark the concerts and festivals you\'re going to, or interested in.',
+      '  - Your next show appears on **Home** and on the artist\'s page.',
+      '  - **Warm up** plays a mix of the artists before the show.',
+      '  - **Reminders** as Windows notifications: a week before, the day before, on the day or 2 hours before.',
+      '  - When a song by an artist you\'re seeing comes on, a banner shows the event.',
+      '  - Add events to Google Calendar, Outlook or Apple Calendar.',
+      '- **Album covers found for you.** Songs without a cover get one from Deezer or Apple Music. Covers you choose always win, and you can turn it off in **Settings → General**.',
+      '- **See your 3D Audio.** A view of the room from above shows your virtual speakers move as you change the sliders, and **Test speakers** plays a sound from each one.',
+      '- **Updates while Yoke is open.** Yoke now checks for updates every hour (change it in **Settings → About**) and downloads them in the background. An **Update now** button appears when one is ready, and Yoke asks before it closes to install.',
+      '- **What\'s new screen.** When Yoke updates, the loading screen shows the new version with a link to these notes.',
+      '- **Artist suggestions.** When you type an artist name, Yoke suggests artists already in your library. A new name still creates a new artist.',
+      '- **Plugin store.** Browse and add plugins right from **Settings → Plugins**.',
+      '- **Arrange the sidebar.** Reorder, show or hide sidebar items in **Settings → Appearance**.',
+      '## 🔄 Changed',
+      '- **A new Yoke icon.**',
+      '- **Singles and remixes** tagged with the album "Single" or "Remix" are now grouped together in **Albums**, instead of making a separate album for each artist.',
+      '- **Songs without a cover** now show their album\'s cover.',
+      '## 🔧 Fixed',
+      '- **Your library is safer.** If Yoke was closed or your PC lost power while saving, your library or settings could be lost. Yoke now saves safely and keeps a backup to recover from.',
+      '- **FFmpeg wasn\'t found** when it was installed with winget, or installed while Yoke was open.'
+    ].join('\n'),
     '1.5.1': [
       '## ✨ New',
       '- **Play CDs.** Plug in a CD drive (USB works) and a new **CD** page appears in the sidebar. Put in a music CD and Yoke plays it straight from the disc in full quality.',
