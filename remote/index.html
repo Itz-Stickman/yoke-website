@@ -120,6 +120,7 @@
       <button data-tab="search" class="on"></button>
       <button data-tab="playlists"></button>
       <button data-tab="stations"></button>
+      <button data-tab="podcasts"></button>
     </div>
     <input class="search" id="search" type="search" placeholder="Search your library" aria-label="Search your library">
     <ul class="rows" id="rows"></ul>
@@ -148,11 +149,12 @@
     search: svg('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>'),
     playlists: svg('<path d="M3 6h13"/><path d="M3 12h9"/><path d="M3 18h6"/><path d="M16 18V9l5-1.5"/><circle cx="14" cy="18" r="2"/>'),
     headphones: svg('<path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>'),
+    podcasts: svg('<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v4"/><path d="M8 22h8"/>'),
     stations: svg('<circle cx="12" cy="12" r="2"/><path d="M16.2 7.8a6 6 0 0 1 0 8.4"/><path d="M7.8 16.2a6 6 0 0 1 0-8.4"/><path d="M19 5a10 10 0 0 1 0 14"/><path d="M5 19A10 10 0 0 1 5 5"/>'),
   };
   for (const id of ['shuffle', 'prev', 'next', 'repeat']) $(id).innerHTML = ICONS[id];
   $('toggle').innerHTML = ICONS.play;
-  for (const [tabName, label] of [['search', 'Search'], ['playlists', 'Playlists'], ['stations', 'Radio']]) {
+  for (const [tabName, label] of [['search', 'Search'], ['playlists', 'Playlists'], ['stations', 'Radio'], ['podcasts', 'Podcasts']]) {
     document.querySelector(`[data-tab="${tabName}"]`).innerHTML = `${ICONS[tabName]}<span>${label}</span>`;
   }
   const volumeIcon = (v, muted) => (muted || v === 0 ? 'muted' : v < 0.34 ? 'low' : v < 0.67 ? 'medium' : 'high');
@@ -372,6 +374,8 @@
         const list = await cmd('playlists');
         rows(list, (p) => p.name, (p) => `${p.count} song${p.count === 1 ? '' : 's'}`, (p) => press('playPlaylist', { id: p.id }));
         if (!list.length) $('note').textContent = 'No playlists yet.';
+      } else if (tab === 'podcasts') {
+        await loadPodcasts();
       } else {
         const list = await cmd('stations');
         rows(list, (s) => s.name, (s) => s.tags, (s) => press('playStation', { uuid: s.uuid }));
@@ -379,6 +383,30 @@
       }
     } catch { /* shown in the note */ }
   }
+  // Podcasts: the shows followed in Yoke on the PC, then a show's episodes.
+  let podShow = null; // { id, title } while looking at a show
+  const podDate = (iso) => (iso ? new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : '');
+  const podLength = (s) => (s >= 3600 ? `${Math.floor(s / 3600)} h ${Math.round((s % 3600) / 60)} min` : s ? `${Math.max(1, Math.round(s / 60))} min` : '');
+  async function loadPodcasts() {
+    if (!podShow) {
+      const list = await cmd('podcasts');
+      rows(list, (s) => s.title, (s) => [s.author, s.downloaded ? `${s.downloaded} downloaded` : ''].filter(Boolean).join(' · '), (s) => {
+        podShow = { id: s.id, title: s.title };
+        loadTab();
+      });
+      if (!list.length) $('note').textContent = 'Podcasts you follow in Yoke on your PC show up here.';
+      return;
+    }
+    const episodes = await cmd('podcastEpisodes', { id: podShow.id });
+    rows([{ back: true }, ...episodes],
+      (e) => (e.back ? `← ${podShow.title}` : e.title),
+      (e) => (e.back ? 'All podcasts' : [podDate(e.date), podLength(e.duration), e.finished ? 'Played' : e.position ? 'Started' : '', e.downloaded ? 'Downloaded' : ''].filter(Boolean).join(' · ')),
+      (e) => {
+        if (e.back) { podShow = null; return loadTab(); }
+        press('playEpisode', { showId: podShow.id, episodeId: e.id });
+      });
+  }
+
   let searchTimer = null;
   async function runSearch() {
     const q = $('search').value.trim();
@@ -506,7 +534,22 @@
   }
 
   // Waits until the song can start, then tells the PC (which waits for the phone at each new song).
+  function playDirect(id, url) {
+    loadingId = null;
+    if (loadedUrl && loadedUrl.startsWith('blob:') && loadedUrl !== loadedSong?.fullUrl) URL.revokeObjectURL(loadedUrl);
+    loadedSong = null;
+    loadedUrl = url;
+    loadedParts = 0;
+    loadedBytes = 0;
+    ear.src = url;
+    loadedId = id;
+    listenNote('');
+    cmd('listenReady', { id }, { quiet: true }).catch(() => {});
+    sync();
+  }
+
   function loadSong(id) {
+    if (player?.track?.id === id && player.track.streamUrl) return playDirect(id, player.track.streamUrl); // a podcast
     if (loadingId === id) return;
     loadingId = id;
     const song = getSong(id);
