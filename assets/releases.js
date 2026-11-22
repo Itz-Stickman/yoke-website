@@ -5,13 +5,28 @@
   var DOWNLOAD_BASE = 'https://github.com/' + REPO + '/releases/download/';
   var CACHE_KEY = 'yoke-releases-v2';
 
-  var FALLBACK = [['1.6.0', '2026-11-16'], ['1.5.1', '2026-10-30'], ['1.4.6', '2026-10-28'], ['1.4.5', '2026-10-28'], ['1.4.0', '2026-10-28'], ['1.3.1', '2026-10-28'], ['1.3.0', '2026-10-28']].map(function (v) {
+  var FALLBACK = [['1.7.0', '2026-11-21'], ['1.6.0', '2026-11-16'], ['1.5.1', '2026-10-30'], ['1.4.6', '2026-10-28'], ['1.4.5', '2026-10-28'], ['1.4.0', '2026-10-28'], ['1.3.1', '2026-10-28'], ['1.3.0', '2026-10-28']].map(function (v) {
     return { version: v[0], date: v[1], setup: 'Yoke-Setup-' + v[0] + '.exe', portable: 'Yoke-' + v[0] + '-portable.exe' };
   });
 
   // Notes written for the site, in the same Markdown as GitHub releases.
   // If a GitHub release has its own notes, those win.
   var NOTES = {
+    '1.7.0': [
+      '## ✨ New',
+      '- **Yoke on your TV (beta).** Play your library on a Roku TV. In **Settings → Devices → Add a device → TV**, pick your TV and enter the number it shows.',
+      '  - Big-screen **Now Playing** with synced lyrics, plus four **visualizers**: Spectrum Bars, Halo, Retro and Yule Log.',
+      '  - Use Yoke on your PC as a **remote** for the TV, and your accent colour follows you there.',
+      '  - Yoke for Roku is in beta and is reaching people a few at a time.',
+      '- **Podcasts.** A new **Podcasts** page: search Apple\'s podcast directory, browse the top charts or paste a feed address.',
+      '  - Follow shows, stream episodes or download them to play offline. **Download all**, or get new episodes automatically.',
+      '  - Yoke remembers where you stopped in every episode and marks the ones you\'ve finished.',
+      '- **Your devices.** **Settings → Devices** shows everything connected to Yoke: TVs and web remotes. Android phones and Meta Quest are coming soon.',
+      '## 🔧 Improvements',
+      '- **Phone remote** is now called **Web remote**.',
+      '- Radio searches by genre find more stations.',
+      '- Song names written in fancy letters (like 𝐭𝐡𝐢𝐬) show properly on the TV.',
+    ],
     '1.6.0': [
       '## ✨ New',
       '- **Radio.** A new **Radio** page with live internet stations: search by name, country or genre, and ♥ your favorites.',
